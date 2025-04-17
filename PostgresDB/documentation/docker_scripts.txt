@@ -1,0 +1,25 @@
+docker compose --env-file .env.postgres up
+
+docker build -t crypto_postgres:latest .
+
+docker run -d \
+  --name crypto_postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=your_secure_password \
+  -e POSTGRES_DB=crypto_db \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  crypto_postgres:latest \
+  postgres -c "config_file=/etc/postgresql/postgresql.conf" -c "include_dir=/etc/postgresql/conf.d"
+
+docker run --env-file .env.postgres \
+  --name crypto_postgres \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  crypto_postgres:latest \
+  postgres -c "config_file=/etc/postgresql/postgresql.conf" -c "include_dir=/etc/postgresql/conf.d"
+
+
+docker rm -f crypto_postgres
+docker rmi -f postgresdb-postgres:latest
+docker volume rm postgresdb_postgres_data
