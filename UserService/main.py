@@ -6,7 +6,7 @@ app = FastAPI()
 app.include_router(UserController.router)
 
 origins = [
-    "http://localhost:80",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(
