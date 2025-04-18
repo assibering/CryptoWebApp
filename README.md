@@ -1,2 +1,2 @@
 # CryptoWebApp
-![Solution Design](images/CrytoWebAppDesign.png)
+![Solution Design](images/CryptoWebAppDesign.png)
