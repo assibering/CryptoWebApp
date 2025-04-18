@@ -1,7 +1,6 @@
 from Pydantic import BaseModel, model_validator
 from typing_extensions import Self
 
-
 class ResetPassword(BaseModel):
     password: str
     password_repeat: str

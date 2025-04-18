@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Response, HTTPException
-from ..schemas import User
+from ..schemas import UserSchemas
 
 router = APIRouter(
     prefix="/users"
@@ -9,7 +9,7 @@ router = APIRouter(
 @router.post("/reset-password")
 async def send_verification_user(
     response: Response,
-    reset_password: User.ResetPassword
+    reset_password: UserSchemas.ResetPassword
     ):
 
     try:
