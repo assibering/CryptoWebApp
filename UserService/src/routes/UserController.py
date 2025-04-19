@@ -13,6 +13,6 @@ async def send_verification_user(
     ):
 
     try:
-        return {'message': 'Password reset successfully'}
+        return {'message': 'YAY! Password reset successfully'}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

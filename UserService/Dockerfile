@@ -1,28 +1,35 @@
-# An example of using standalone Python builds with multistage images.
+# syntax=docker/dockerfile:1.4
+# (this line enables modern Docker features like mount)
 
-# First, build the application in the `/app` directory
-FROM ghcr.io/astral-sh/uv:bookworm-slim AS builder
+###########################################
+# BUILDER stage
+###########################################
+FROM ghcr.io/astral-sh/uv:bookworm-slim as builder
+
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-
-# Configure the Python directory so it is consistent
 ENV UV_PYTHON_INSTALL_DIR=/python
-
-# Only use the managed Python version
 ENV UV_PYTHON_PREFERENCE=only-managed
 
-# Install Python before the project for caching
 RUN uv python install 3.12
 
 WORKDIR /app
+
+# Install dependencies (only)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
     uv sync --frozen --no-install-project --no-dev
+
+# Copy full app code
 ADD . /app
+
+# Install full project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
-# Then, use a final image without uv
+###########################################
+# FINAL stage
+###########################################
 FROM debian:bookworm-slim
 
 # Copy the Python version
@@ -31,8 +38,8 @@ COPY --from=builder --chown=python:python /python /python
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
 
-# Place executables in the environment at the front of the path
+# Production-specific env
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Run the FastAPI application by default
+# Default prod command (no reload)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

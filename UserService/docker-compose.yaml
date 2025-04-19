@@ -1,7 +1,12 @@
+## From the example docker-compose.yaml file provided by uv
+## https://github.com/astral-sh/uv-docker-example
+## https://github.com/astral-sh/uv-docker-example/blob/main/compose.yml
+
 services:
   web:
     # Build the image from the Dockerfile in the current directory
-    build: .
+    build:
+      context: .
 
     # Host the FastAPI application on port 8000
     ports:
