@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgresql:
+    build:
+      context: ./PostgresDB
+      dockerfile: Dockerfile
+    container_name: crypto_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file: ./PostgresDB/.env.postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  user_service:
+    # Build the image from the Dockerfile in the /UserService directory
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    container_name: crypto_user_service
+
+    # Host the FastAPI application on port 8000
+    ports:
+      - "8000:8000"
+    
+    env_file: ./UserService/.env.userservice
+
+    develop:
+      # Create a `watch` configuration to update the app
+      # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: rebuild
+          path: .
+          target: /app
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .venv/
+
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
+
+volumes:
+  postgres_data:
+    driver: local
