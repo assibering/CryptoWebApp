@@ -55,3 +55,15 @@ CREATE TABLE IF NOT EXISTS crypto.fetch_jobs (
     last_fetch_end_time BIGINT NOT NULL, -- the most recent end time used for fetching data
     job_successful BOOLEAN NOT NULL -- true if the data was successfully inserted, false otherwise
 );
+
+
+-- Create the schema if not exists
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- Create the users table
+CREATE TABLE IF NOT EXISTS auth.users (
+    email VARCHAR(50) PRIMARY KEY,
+    hashed_password VARCHAR(50) NOT NULL, -- hashed (pw, salt)
+    salt VARCHAR(50) NOT NULL,
+    is_active BOOLEAN NOT NULL
+);
