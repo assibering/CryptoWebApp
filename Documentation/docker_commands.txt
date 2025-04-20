@@ -1,0 +1,2 @@
+# Removes all containers, images and volumes
+docker compose down --volumes --rmi all

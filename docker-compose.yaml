@@ -9,7 +9,6 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    env_file: ./PostgresDB/.env.postgres
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -27,12 +26,17 @@ services:
       context: ./UserService
       dockerfile: Dockerfile
     container_name: crypto_user_service
+    environment:
+      # Set the database URL for the FastAPI application
+      DATABASE_URL: ${DATABASE_URL}
 
     # Host the FastAPI application on port 8000
     ports:
       - "8000:8000"
-    
-    env_file: ./UserService/.env.userservice
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
 
     develop:
       # Create a `watch` configuration to update the app

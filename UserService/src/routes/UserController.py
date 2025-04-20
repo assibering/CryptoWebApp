@@ -26,8 +26,7 @@ async def reset_password(
     try:
         return await user_service.create_user(
             UserSchemas.User(
-                email=User_instance.email,
-                password=User_instance.password,
+                email=User_instance.email
             )
         )
     except Exception as e:

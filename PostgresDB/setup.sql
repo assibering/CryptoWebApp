@@ -11,13 +11,16 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- 1. run init to create schemas and tables
 \i /opt/sql/init_tables.sql
 
--- 2. Create the fetch_klines function
+-- 2. Create authorised users and grant permissions
+\i /opt/sql/authorised_services.sql
+
+-- 3. Create the fetch_klines function
 \i /opt/sql/functions/fetch_klines.sql
 
--- 3. Set up the cron job
+-- 4. Set up the cron job
 \i /opt/sql/schedules/cron_scheduler.sql
 
--- 4. Run the function once immediately to initialize data
+-- 5. Run the function once immediately to initialize data
 SELECT crypto.fetch_klines();
 
 -- Log completion

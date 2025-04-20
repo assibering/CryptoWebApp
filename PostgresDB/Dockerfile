@@ -34,6 +34,7 @@ RUN mkdir -p /opt/sql/functions /opt/sql/schedules && \
 COPY --chown=postgres:postgres init_db.sql /docker-entrypoint-initdb.d/00_init_db.sql
 COPY --chown=postgres:postgres setup.sql /docker-entrypoint-initdb.d/01_setup.sql
 COPY --chown=postgres:postgres init_tables.sql /opt/sql/
+COPY --chown=postgres:postgres authorised_services.sql /opt/sql/
 COPY --chown=postgres:postgres functions/ /opt/sql/functions/
 COPY --chown=postgres:postgres schedules/ /opt/sql/schedules/
 

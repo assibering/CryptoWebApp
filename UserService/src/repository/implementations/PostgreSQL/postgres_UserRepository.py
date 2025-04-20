@@ -1,11 +1,11 @@
 from src.repository.interfaces import interface_UserRepository
 from src.schemas import UserSchemas
 from sqlalchemy.orm import Session
-from src.repository.implementations.PostgreSQL.models import UserORM
+from src.repository.implementations.PostgreSQL.models import ORM_User
 
 class UserRepository(interface_UserRepository.UserRepository):
 
-    def __init__(self, db: Session): #Session later
+    def __init__(self, db: Session):
         self.db = db
 
     async def get_table(self):
@@ -18,11 +18,11 @@ class UserRepository(interface_UserRepository.UserRepository):
 
     async def create_user(self, User_instance: UserSchemas.User):
         try:
-            db_user = UserORM(
+            db_user = ORM_User.UserORM(
                 email=User_instance.email,
                 hashed_password=User_instance.hashed_password,
                 salt=User_instance.salt,
-                is_active=User_instance.is_active
+                is_active=True if User_instance.is_active else False
             )
             self.db.add(db_user)
             self.db.commit()

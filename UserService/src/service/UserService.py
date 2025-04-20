@@ -25,10 +25,6 @@ class UserService:
             if user_instance.hashed_password or user_instance.salt or user_instance.is_active:
                 raise Exception("These fields are not allowed to be set manually.")
             
-            user_instance.hashed_password = "dummy_hashed_password"  # Placeholder for actual hashing logic
-            user_instance.salt = "dummy_salt"  # Placeholder for actual salt generation logic
-            user_instance.is_active = True  # Default value for is_active
-            
             # Create the user
             return await self.user_repository.create_user(user_instance)
         

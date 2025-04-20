@@ -16,5 +16,5 @@ class User(BaseModel):
     email: str
     hashed_password: Optional[str] = None
     salt: Optional[str] = None
-    is_active: Optional[bool] = True
+    is_active: Optional[bool] = None
 
