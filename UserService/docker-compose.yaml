@@ -17,7 +17,7 @@ services:
       # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
       watch:
         # Sync the working directory with the `/app` directory in the container
-        - action: sync
+        - action: rebuild
           path: .
           target: /app
           # Exclude the project virtual environment — it could be for a

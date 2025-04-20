@@ -41,5 +41,7 @@ COPY --from=builder --chown=app:app /app /app
 # Production-specific env
 ENV PATH="/app/.venv/bin:$PATH"
 
+ENV PYTHONPATH="/app"
+
 # Default prod command (no reload)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
