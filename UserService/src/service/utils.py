@@ -1,5 +1,3 @@
-import uuid
-import hashlib
 import crypt
 
 async def saltAndHashedPW(password: str):

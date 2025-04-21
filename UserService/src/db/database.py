@@ -1,15 +1,21 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 import os
 
-# Get the database URL from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL, echo=True, future=True)
+# Example async database URL:
+# "postgresql+asyncpg://user:password@localhost:5432/dbname"
 
-# Create a sessionmaker factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create an async engine
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
-# Base class for your models (if you use ORM models)
+# Create an async sessionmaker factory
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    expire_on_commit=False,  # optional: objects stay active after commit
+    class_=AsyncSession
+)
+
+# ORM Base class
 Base = declarative_base()
