@@ -4,11 +4,7 @@ from ...schemas import UserSchemas
 class UserRepository(ABC):
 
     @abstractmethod
-    async def get_table(self):
-        pass
-
-    @abstractmethod
-    async def get_user(self, email: str):
+    async def get_user(self, email: str) -> UserSchemas.User:
         pass
 
     @abstractmethod

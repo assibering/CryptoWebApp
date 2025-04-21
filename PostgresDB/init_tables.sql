@@ -63,7 +63,7 @@ CREATE SCHEMA IF NOT EXISTS auth;
 -- Create the users table
 CREATE TABLE IF NOT EXISTS auth.users (
     email VARCHAR(50) PRIMARY KEY,
-    hashed_password VARCHAR(50), -- hashed (pw, salt)
+    hashed_password VARCHAR(200), -- hashed (pw, salt)
     salt VARCHAR(50),
     is_active BOOLEAN
 );

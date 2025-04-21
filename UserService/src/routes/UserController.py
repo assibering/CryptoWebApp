@@ -7,13 +7,13 @@ router = APIRouter(
     prefix="/users"
 )
 
-#ONLY FOR DEBUGGING
-@router.get("/get-table")
-async def get_table(
+@router.get("/")
+async def reset_password(
     response: Response,
+    email: str,
     user_service: UserService = Depends(get_user_service)):
     try:
-        return await user_service.get_table()
+        return await user_service.get_user(email=email)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -38,10 +38,21 @@ async def reset_password(
     reset_password: UserSchemas.ResetPassword,
     user_service: UserService = Depends(get_user_service)):
     try:
-        return await user_service.update_user(
-            UserSchemas.User(
-                email="dummy@email.com"
-            )
+        return await user_service.reset_password(
+            email="dummy@email.com",
+            reset_password=reset_password
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/deactivate-user")
+async def reset_password(
+    response: Response,
+    email: str,
+    user_service: UserService = Depends(get_user_service)):
+    try:
+        return await user_service.deactivate_user(
+            email=email
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
