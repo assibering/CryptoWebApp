@@ -7,12 +7,6 @@ class UserService:
 
     def __init__(self, user_repository: interface_UserRepository):
         self.user_repository = user_repository
-
-    async def get_table(self):
-        try:
-            return await self.user_repository.get_table()
-        except Exception as e:
-            raise Exception(f"Error getting table: {str(e)}")
     
     async def get_user(self, email: str) -> UserSchemas.User:
         try:
