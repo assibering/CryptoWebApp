@@ -1,7 +1,10 @@
 from src.repository.interfaces import interface_UserRepository
 from src.schemas import UserSchemas
 from .utils import saltAndHashedPW
+from src.exceptions import BaseAppException, ResourceNotFoundException, ValidationException
+import logging
 
+logger = logging.getLogger(__name__)
 
 class UserService:
 
@@ -11,20 +14,28 @@ class UserService:
     async def get_user(self, email: str) -> UserSchemas.User:
         try:
             return await self.user_repository.get_user(email)
+        except BaseAppException:
+            raise #Re-raise from repository layer
         except Exception as e:
-            raise Exception(f"Error getting user: {str(e)}")
+            logger.exception(f"Error getting user: {str(e)}")
+            raise BaseAppException(f"Error getting user: {str(e)}") from e
         
     async def create_user(self, user_instance: UserSchemas.User):
         try:
             # Validate the user instance
-            if user_instance.hashed_password or user_instance.salt or user_instance.is_active:
-                raise Exception("These fields are not allowed to be set manually.")
+            if user_instance.hashed_password is not None or\
+                  user_instance.salt is not None or\
+                      user_instance.is_active is not None:
+                logger.warning("User instance should not contain hashed_password, salt, or is_active fields")
+                raise ValidationException("User instance should not contain hashed_password, salt, or is_active fields")
             
             # Create the user
             return await self.user_repository.create_user(user_instance)
-        
+        except BaseAppException:
+            raise
         except Exception as e:
-            raise Exception(f"Error creating user: {str(e)}")
+            logger.exception(f"Error creating user: {str(e)}")
+            raise BaseAppException(f"Error creating user: {str(e)}") from e
     
     async def reset_password(self, email: str, reset_password: UserSchemas.ResetPassword):
         salt, hashed_pw = await saltAndHashedPW(reset_password.password)
@@ -37,8 +48,11 @@ class UserService:
                     is_active=True
                 )
             )
+        except BaseAppException:
+            raise
         except Exception as e:
-            raise Exception(f"Error updating user: {str(e)}")
+            logger.exception(f"Error updating user: {str(e)}")
+            raise BaseAppException(f"Error updating user: {str(e)}") from e
     
     async def deactivate_user(self, email: str):
         try:
@@ -48,7 +62,10 @@ class UserService:
                     is_active=False
                 )
             )
+        except BaseAppException:
+            raise
         except Exception as e:
-            raise Exception(f"Error updating user: {str(e)}")
+            logger.exception(f"Error deactivating user: {str(e)}")
+            raise BaseAppException(f"Error deactivating user: {str(e)}") from e
         
     

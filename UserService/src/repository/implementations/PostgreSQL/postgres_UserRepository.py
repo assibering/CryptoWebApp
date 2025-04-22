@@ -3,6 +3,10 @@ from src.schemas import UserSchemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.repository.implementations.PostgreSQL.models.ORM_User import UserORM
+from src.exceptions import ResourceNotFoundException, BaseAppException
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserRepository(interface_UserRepository.UserRepository):
 
@@ -10,18 +14,27 @@ class UserRepository(interface_UserRepository.UserRepository):
         self.db = db
 
     async def get_user(self, email: str) -> UserSchemas.User:
-        stmt = select(UserORM).where(UserORM.email == email)
-        result = await self.db.execute(stmt)
-        db_user = result.scalar_one_or_none()
-        if db_user:    
-            return UserSchemas.User(
-                email=db_user.email,
-                is_active=db_user.is_active
-            )
-        else:
-            raise Exception("User not found")
+        try:
+            stmt = select(UserORM).where(UserORM.email == email)
+            result = await self.db.execute(stmt)
+            db_user = result.scalar_one_or_none()
+            if db_user:    
+                return UserSchemas.User(
+                    email=db_user.email,
+                    is_active=db_user.is_active
+                )
+            else:
+                logger.warning(f"User with email {email} not found")
+                raise ResourceNotFoundException(f"User with email {email} not found")
+            
+        except BaseAppException:
+            raise
 
-    async def create_user(self, User_instance: UserSchemas.User):
+        except Exception as e:
+            logger.exception(f"Error getting user: {str(e)}")
+            raise BaseAppException(f"Internal database error: {str(e)}") from e
+
+    async def create_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
         try:
             db_user = UserORM(
                 email=User_instance.email,
@@ -32,26 +45,38 @@ class UserRepository(interface_UserRepository.UserRepository):
             self.db.add(db_user)
             await self.db.commit()
             await self.db.refresh(db_user)
-            print("create_user method called with User_instance:", User_instance)
-            return True
+            return UserSchemas.User(
+                email=User_instance.email,
+                is_active=User_instance.is_active
+            )
         except Exception as e:
-            print("Error creating user:", str(e))
-            return False
+            logger.exception(f"Error getting user: {str(e)}")
+            raise BaseAppException(f"Internal database error: {str(e)}") from e
 
-    async def update_user(self, User_instance: UserSchemas.User):
-        stmt = select(UserORM).where(UserORM.email == User_instance.email)
-        result = await self.db.execute(stmt)
-        db_user = result.scalar_one_or_none()
-        if not db_user:
-            raise Exception("User not found")
+    async def update_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
+        try:
+            stmt = select(UserORM).where(UserORM.email == User_instance.email)
+            result = await self.db.execute(stmt)
+            db_user = result.scalar_one_or_none()
+            if db_user:
+                update_fields = User_instance.dict(exclude_unset=True)
+
+                for field, value in update_fields.items():
+                    setattr(db_user, field, value)  # dynamically update each field
+                
+                await self.db.commit()
+                await self.db.refresh(db_user)
+                return UserSchemas.User(
+                    email=db_user.email,
+                    is_active=db_user.is_active
+                )
+            else:
+                logger.warning(f"User with email {User_instance.email} not found")
+                raise ResourceNotFoundException(f"User with email {User_instance.email} not found")
+            
+        except BaseAppException:
+            raise
         
-        update_fields = User_instance.dict(exclude_unset=True)
-
-        for field, value in update_fields.items():
-            setattr(db_user, field, value)  # dynamically update each field
-        
-        await self.db.commit()
-        await self.db.refresh(db_user)
-
-        print("update_user method called with User_instance:", User_instance)
-        return True
+        except Exception as e:
+            logger.exception(f"Error updating user: {str(e)}")
+            raise BaseAppException(f"Internal database error: {str(e)}") from e
