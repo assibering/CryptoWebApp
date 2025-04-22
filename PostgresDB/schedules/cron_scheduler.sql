@@ -4,7 +4,7 @@ FROM cron.job
 WHERE command LIKE 'DO $$DECLARE end_time BIGINT%';  -- safer filter
 
 -- Then schedule one cron job every 30 minutes
-SELECT cron.schedule('*/5 * * * *', 
+SELECT cron.schedule('*/30 * * * *', 
 $cron$
 DO $$
 DECLARE
@@ -40,7 +40,7 @@ BEGIN
 
         -- small sleep between retries to avoid hammering
         PERFORM pg_sleep(5); -- sleep 5 seconds if needed
-        
+
     END LOOP;
 END $$;
 $cron$
