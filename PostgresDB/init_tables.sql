@@ -50,10 +50,11 @@ CREATE TABLE IF NOT EXISTS crypto.kline_assets (
 -- Create the fetch_jobs table
 CREATE TABLE IF NOT EXISTS crypto.fetch_jobs (
     id SERIAL PRIMARY KEY,
-    job_name VARCHAR(40) NOT NULL, -- name of the job, e.g. klines_updated
-    last_fetch_start_time BIGINT NOT NULL, -- the most recent start time used for fetching data
-    last_fetch_end_time BIGINT NOT NULL, -- the most recent end time used for fetching data
-    job_successful BOOLEAN NOT NULL -- true if the data was successfully inserted, false otherwise
+    symbol TEXT NOT NULL,
+    last_fetch_start_time BIGINT NOT NULL DEFAULT 0,
+    last_fetch_end_time BIGINT NOT NULL,
+    job_successful BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 
