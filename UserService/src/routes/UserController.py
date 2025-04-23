@@ -7,24 +7,21 @@ router = APIRouter(
     prefix="/users"
 )
 
-@router.get("/")
+@router.get("", status_code=200)
 async def get_user(
-    response: Response,
     email: str,
     user_service: UserService = Depends(get_user_service)):
     return await user_service.get_user(email=email)
     
 #TEMPORARY - Kafka will be used for this
-@router.post("/create-user")
+@router.post("/create-user", status_code=201)
 async def create_user(
-    response: Response,
     User_instance: UserSchemas.User,
     user_service: UserService = Depends(get_user_service)):
     return await user_service.create_user(user_instance=User_instance)
 
-@router.post("/reset-password")
+@router.put("/reset-password", status_code=204)
 async def reset_password(
-    response: Response,
     reset_password: UserSchemas.ResetPassword,
     user_service: UserService = Depends(get_user_service)):
     return await user_service.reset_password(
@@ -32,9 +29,8 @@ async def reset_password(
         reset_password=reset_password
     )
 
-@router.post("/deactivate-user")
+@router.put("/deactivate-user", status_code=204)
 async def deactivate_user(
-    response: Response,
     email: str,
     user_service: UserService = Depends(get_user_service)):
     return await user_service.deactivate_user(

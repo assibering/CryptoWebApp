@@ -6,11 +6,30 @@ import logging
 from src.logging_config import setup_logging
 from fastapi.responses import JSONResponse
 from src.middleware.correlation_id_middleware import CorrelationIdMiddleware
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code (runs before application startup)
+    # This is where you put code that was previously in @app.on_event("startup")
+    yield
+    # Shutdown code (runs after application shutdown)
+    # This is where you put code that was previously in @app.on_event("shutdown")
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code (runs before application startup)
+    # This is where you put code that was previously in @app.on_event("startup")
+    logger.info("Running startup tasks...")
+    logger.info("Start up tasks completed")
+    yield
+    # Shutdown code (runs after application shutdown)
+    # This is where you put code that was previously in @app.on_event("shutdown")
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:8000",
@@ -20,20 +39,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST, GET"],
+    allow_methods=["POST, GET, PUT"],
     allow_headers=["Authorization", "Content-Type"]
 )
 
 # Enable Correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
-
-# Define the startup method
-@app.on_event("startup")
-async def startup_event():
-    # Call your method(s) to create tables or perform any startup tasks
-    logger.info("Running startup tasks...")
-    logger.info("Start up tasks completed")
-
 
 # Global exception handler
 @app.exception_handler(BaseAppException)

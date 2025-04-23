@@ -5,6 +5,7 @@ services:
     build:
       context: ./PostgresDB
       dockerfile: Dockerfile
+      target: no-crypto-fetch-setup
     container_name: crypto_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -20,15 +21,17 @@ services:
       timeout: 5s
       retries: 5
   
-  user_service:
+  user_service_unit:
     # Build the image from the Dockerfile in the /UserService directory
     build:
       context: ./UserService
       dockerfile: Dockerfile
+      target: production
     container_name: crypto_user_service
     environment:
       # Set the database URL for the FastAPI application
       DATABASE_URL: ${DATABASE_URL}
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL}
 
     # Host the FastAPI application on port 8000
     ports:

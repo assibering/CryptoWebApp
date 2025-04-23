@@ -3,8 +3,9 @@ from src.schemas import UserSchemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.repository.implementations.PostgreSQL.models.ORM_User import UserORM
-from src.exceptions import ResourceNotFoundException, BaseAppException
+from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 logger.warning(f"User with email {email} not found")
                 raise ResourceNotFoundException(f"User with email {email} not found")
             
-        except BaseAppException:
+        except ResourceNotFoundException:
             raise
 
         except Exception as e:
@@ -39,7 +40,6 @@ class UserRepository(interface_UserRepository.UserRepository):
             db_user = UserORM(
                 email=User_instance.email,
                 hashed_password=User_instance.hashed_password,
-                salt=User_instance.salt,
                 is_active=True if User_instance.is_active else False
             )
             self.db.add(db_user)
@@ -47,8 +47,20 @@ class UserRepository(interface_UserRepository.UserRepository):
             await self.db.refresh(db_user)
             return UserSchemas.User(
                 email=User_instance.email,
-                is_active=User_instance.is_active
+                is_active=True if User_instance.is_active else False
             )
+        
+        except IntegrityError as e:
+            if "UniqueViolationError" in str(e.orig):
+                logger.warning(f"User with email {User_instance.email} already exists")
+                raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
+            else:
+                # Some other kind of IntegrityError (e.g., null value, foreign key constraint, etc)
+                raise BaseAppException(f"Database integrity error: {str(e)}") from e
+            
+        except ResourceAlreadyExistsException:
+            raise
+
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
@@ -74,7 +86,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 logger.warning(f"User with email {User_instance.email} not found")
                 raise ResourceNotFoundException(f"User with email {User_instance.email} not found")
             
-        except BaseAppException:
+        except ResourceNotFoundException:
             raise
         
         except Exception as e:

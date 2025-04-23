@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1.4
-# (this line enables modern Docker features like mount)
 
 ###########################################
 # BUILDER stage
@@ -28,9 +27,116 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 ###########################################
-# FINAL stage
+# UNIT TEST stage
 ###########################################
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim as unit-test
+
+# Copy the Python version
+COPY --from=builder --chown=python:python /python /python
+
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
+
+# Test-specific env
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
+
+# Run unit tests by default (using config from pyproject.toml)
+CMD ["python", "-m", "pytest", "app/tests/unit"]
+
+###########################################
+# INTEGRATION TEST stage
+###########################################
+FROM debian:bookworm-slim as integration-test
+
+# Copy the Python version
+COPY --from=builder --chown=python:python /python /python
+
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
+
+# Install bash for scripting
+RUN apt-get update && apt-get install -y bash
+
+# Test-specific env
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
+
+# Create test runner script
+RUN echo '#!/bin/bash\n\
+echo "👉 Starting server..."\n\
+uvicorn src.main:app --host 0.0.0.0 --port 8000 & \n\
+SERVER_PID=$!\n\
+\n\
+echo "👉 Waiting for server to start..."\n\
+sleep 5\n\
+\n\
+echo "👉 Running integration tests..."\n\
+python -m pytest app/tests/integration\n\
+TEST_EXIT_CODE=$?\n\
+\n\
+echo "👉 Stopping server..."\n\
+kill $SERVER_PID\n\
+\n\
+exit $TEST_EXIT_CODE\n\
+' > /app/run_integration_tests.sh && chmod +x /app/run_integration_tests.sh
+
+# Run integration tests by default
+CMD ["/app/run_integration_tests.sh"]
+
+###########################################
+# FULL TEST stage (unit + integration)
+###########################################
+FROM debian:bookworm-slim as full-test
+
+# Copy the Python version
+COPY --from=builder --chown=python:python /python /python
+
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
+
+# Install bash for scripting
+RUN apt-get update && apt-get install -y bash
+
+# Test-specific env
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
+
+# Create test runner script
+RUN echo '#!/bin/bash\n\
+echo "👉 Running unit tests..."\n\
+python -m pytest app/tests/unit\n\
+UNIT_TEST_EXIT_CODE=$?\n\
+\n\
+if [ $UNIT_TEST_EXIT_CODE -ne 0 ]; then\n\
+    echo "❌ Unit tests failed with exit code $UNIT_TEST_EXIT_CODE"\n\
+    exit $UNIT_TEST_EXIT_CODE\n\
+fi\n\
+\n\
+echo "👉 Starting server..."\n\
+uvicorn src.main:app --host 0.0.0.0 --port 8000 & \n\
+SERVER_PID=$!\n\
+\n\
+echo "👉 Waiting for server to start..."\n\
+sleep 5\n\
+\n\
+echo "👉 Running integration tests..."\n\
+python -m pytest app/tests/integration\n\
+INTEGRATION_TEST_EXIT_CODE=$?\n\
+\n\
+echo "👉 Stopping server..."\n\
+kill $SERVER_PID\n\
+\n\
+exit $INTEGRATION_TEST_EXIT_CODE\n\
+' > /app/run_all_tests.sh && chmod +x /app/run_all_tests.sh
+
+# Run all tests by default
+CMD ["/app/run_all_tests.sh"]
+
+###########################################
+# PRODUCTION stage
+###########################################
+FROM debian:bookworm-slim as production
 
 # Copy the Python version
 COPY --from=builder --chown=python:python /python /python
@@ -40,7 +146,6 @@ COPY --from=builder --chown=app:app /app /app
 
 # Production-specific env
 ENV PATH="/app/.venv/bin:$PATH"
-
 ENV PYTHONPATH="/app"
 
 # Default prod command (no reload)

@@ -6,5 +6,4 @@ class UserORM(Base):
     __table_args__ = {"schema": "auth"}
     email = Column(String, primary_key=True, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=True)
-    salt = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)

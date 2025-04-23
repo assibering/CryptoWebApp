@@ -11,6 +11,9 @@ services:
     # Host the FastAPI application on port 8000
     ports:
       - "8000:8000"
+    environment:
+      # Set the database URL for the FastAPI application
+      DATABASE_URL: ${DATABASE_URL}
 
     develop:
       # Create a `watch` configuration to update the app

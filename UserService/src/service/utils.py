@@ -1,6 +1,6 @@
-import crypt
+from passlib.hash import sha512_crypt
 
 async def saltAndHashedPW(password: str):
-    salt = crypt.mksalt(crypt.METHOD_SHA512)
-    hashed_password = crypt.crypt(password, salt)
-    return salt, hashed_password
+    # Generate a random salt and hash the password
+    # passlib handles salt generation internally
+    return sha512_crypt.hash(password)
