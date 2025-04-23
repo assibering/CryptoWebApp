@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: full-setup
     container_name: crypto_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
