@@ -4,8 +4,6 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Example async database URL:
-# "postgresql+asyncpg://user:password@localhost:5432/dbname"
 
 # Create an async engine
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
