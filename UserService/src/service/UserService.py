@@ -16,8 +16,6 @@ class UserService:
             return await self.user_repository.get_user(email)
         except ResourceNotFoundException:
             raise #Re-raise from repository layer
-        except BaseAppException:
-            raise 
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Error getting user: {str(e)}") from e
@@ -35,8 +33,6 @@ class UserService:
             raise
         except ValidationException:
             raise
-        except BaseAppException:
-            raise
         except Exception as e:
             logger.exception(f"Error creating user: {str(e)}")
             raise BaseAppException(f"Error creating user: {str(e)}") from e
@@ -53,8 +49,6 @@ class UserService:
             )
         except ResourceNotFoundException:
             raise
-        except BaseAppException:
-            raise
         except Exception as e:
             logger.exception(f"Error updating user: {str(e)}")
             raise BaseAppException(f"Error updating user: {str(e)}") from e
@@ -68,8 +62,6 @@ class UserService:
                 )
             )
         except ResourceNotFoundException:
-            raise
-        except BaseAppException:
             raise
         except Exception as e:
             logger.exception(f"Error deactivating user: {str(e)}")

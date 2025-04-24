@@ -117,7 +117,8 @@ async def test_get_user_database_error(user_service, sample_user_inactive_nopw):
     # Verify the repository method was called correctly
     user_service.user_repository.get_user.assert_called_once_with(sample_user_inactive_nopw.email)
     
-    assert "Internal database error" in str(exc_info.value)
+    assert "Error getting user:" in str(exc_info.value)
+    assert "Internal database error:" in str(exc_info.value)
 
 # # Tests for create_user method
 @pytest.mark.asyncio
@@ -238,6 +239,7 @@ async def test_create_user_other_integrity_error(user_service, sample_user_inact
         )
     )
     
+    assert "Error creating user:" in str(exc_info.value)
     assert "Database integrity error:" in str(exc_info.value)
 
 @pytest.mark.asyncio
@@ -267,6 +269,7 @@ async def test_create_user_general_exception(user_service, sample_user_inactive_
         )
     )
     
+    assert "Error creating user:" in str(exc_info.value)
     assert "Internal database error:" in str(exc_info.value)
 
 # Tests for reset_password method
@@ -361,6 +364,7 @@ async def test_password_reset_database_error(
     # Verify the repository method was called correctly
     user_service.user_repository.update_user.assert_called_once_with(sample_user_active_pw)
     
+    assert "Error updating user:" in str(exc_info.value)
     assert "Internal database error:" in str(exc_info.value)
 
 # Tests for deactivate_user method
@@ -436,4 +440,5 @@ async def test_deactivate_database_error(
     # Verify the repository method was called correctly
     user_service.user_repository.update_user.assert_called_once_with(sample_user_inactive_nopw)
     
+    assert "Error deactivating user:" in str(exc_info.value)
     assert "Internal database error:" in str(exc_info.value)
