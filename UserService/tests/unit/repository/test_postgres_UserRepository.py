@@ -24,7 +24,6 @@ def sample_user():
         email="test@example.com",
         is_active=True,
         hashed_password="hashed_password_value",
-        salt="salt_value"
     )
 
 @pytest.fixture
@@ -35,7 +34,6 @@ def db_user():
     user.email = "test@example.com"
     user.is_active = True
     user.hashed_password = "hashed_password_value"
-    user.salt = "salt_value"
     return user
 
 # Tests for get_user method

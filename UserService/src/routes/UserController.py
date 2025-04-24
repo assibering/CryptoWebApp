@@ -22,10 +22,16 @@ async def create_user(
 
 @router.put("/reset-password", status_code=204)
 async def reset_password(
+    email: str,
+    sessionId: str,
     reset_password: UserSchemas.ResetPassword,
     user_service: UserService = Depends(get_user_service)):
+
+    # Check if sessionId is valid (sessionId == email in Redis or DB)
+    # Will be implemented as Dependency Injection later
+
     return await user_service.reset_password(
-        email="dummy@email.com",
+        email=email,
         reset_password=reset_password
     )
 

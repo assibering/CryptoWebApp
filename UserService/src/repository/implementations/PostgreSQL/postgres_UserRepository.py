@@ -61,8 +61,11 @@ class UserRepository(interface_UserRepository.UserRepository):
         except ResourceAlreadyExistsException:
             raise
 
+        except BaseAppException:
+            raise
+
         except Exception as e:
-            logger.exception(f"Error getting user: {str(e)}")
+            logger.exception(f"Error creating user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
     async def update_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:

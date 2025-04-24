@@ -33,6 +33,8 @@ class UserService:
             return await self.user_repository.create_user(user_instance)
         except ResourceAlreadyExistsException:
             raise
+        except ValidationException:
+            raise
         except BaseAppException:
             raise
         except Exception as e:
