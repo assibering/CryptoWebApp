@@ -2,91 +2,126 @@ import pytest
 from httpx import AsyncClient
 import json
 
-# Sample user data for testing
-test_user_data = {
-    "email": "test@example.com"
-}
-
-test_user_data_1 = {
-    "email": "test1@example.com"
-}
-
-test_user_data_2 = {
-    "email": "test2@example.com"
-}
-
+# GET USER TESTS
 @pytest.mark.asyncio(loop_scope="session")
-async def test_create_user(async_client: AsyncClient):
-    """Test creating a new user"""
-    response = await async_client.post(
-        "/users/create-user",
-        json=test_user_data
-    )
-    
-    assert response.status_code == 201
-    data = response.json()
-    assert data["email"] == test_user_data["email"]
-    assert data["is_active"] is False
-    assert data["hashed_password"] is None
-
-@pytest.mark.asyncio(loop_scope="session")
-async def test_create_2_users(async_client: AsyncClient):
-    """Test creating a new user"""
-    response1 = await async_client.post(
-        "/users/create-user",
-        json=test_user_data_1
-    )
-
-    response2 = await async_client.post(
-        "/users/create-user",
-        json=test_user_data_2
-    )
-    
-    assert response1.status_code == 201
-    data1 = response1.json()
-    assert data1["email"] == test_user_data_1["email"]
-    assert data1["is_active"] is False
-    assert data1["hashed_password"] is None
-
-    assert response2.status_code == 201
-    data2 = response2.json()
-    assert data2["email"] == test_user_data_2["email"]
-    assert data2["is_active"] is False
-    assert data2["hashed_password"] is None
-
-@pytest.mark.asyncio(loop_scope="session")
-async def test_get_user(async_client: AsyncClient):
+async def test_get_user_success(async_client: AsyncClient):
     """Test retrieving a user by email"""
+
+    test_user_data = {
+        "email": "0_test@example.com"
+    }
+
     # First create a user
     await async_client.post(
         "/users/create-user",
-        json={"email": "get_user@example.com"}
+        params=test_user_data
     )
     
     # Then retrieve the user
     # ENDPOINT MUST BE /users?email="example@email.com"
     response = await async_client.get(
         "/users",
-        params={"email": "get_user@example.com"}
+        params=test_user_data
     )
     
     assert response.status_code == 200
     data = response.json()
-    assert data["email"] == "get_user@example.com"
-    assert data["is_active"] is False
-    assert data["hashed_password"] is None
+    assert data["email"] == test_user_data["email"]
+    assert data["is_active"] == False
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_nonexistent_user(async_client: AsyncClient):
     """Test retrieving a user that doesn't exist"""
+
+    test_user_data = {
+        "email": "0_nonexistent@example.com"
+    }
+
     response = await async_client.get(
         "/users",
-        params={"email": "nonexistent@example.com"}
+        params=test_user_data
     )
     
-    # Assuming your API returns 404 for non-existent users
-    # If it returns a different status code, adjust this assertion
     assert response.status_code == 404
+    data = response.json()
+    assert 'error' in data
+    assert data["error"] == f"User with email {test_user_data['email']} not found"
+
+
+#CREATE USER TESTS
+@pytest.mark.asyncio(loop_scope="session")
+async def test_create_user_success(async_client: AsyncClient):
+    """Test creating a new user"""
+
+    test_user_data = {
+        "email": "1_test@example.com"
+    }
+
+    response = await async_client.post(
+        "/users/create-user",
+        params=test_user_data
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == test_user_data["email"]
+    assert data["is_active"] == False
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_create_user_already_exists(async_client: AsyncClient):
+    """Test creating the same user twice causing a conflict"""
+
+    test_user_data = {
+        "email": "2_test@example.com"
+    }
+
+    # First create a user
+    await async_client.post(
+        "/users/create-user",
+        params=test_user_data
+    )
+    # Then try to create the same user again
+    response = await async_client.post(
+        "/users/create-user",
+        params=test_user_data
+    )
+    
+    assert response.status_code == 409
+    data = response.json()
+    assert 'error' in data
+    assert data["error"] == f"User with email {test_user_data['email']} already exists"
+
+#RESET PASSWORD TESTS
+@pytest.mark.asyncio(loop_scope="session")
+async def test_reset_password_success(async_client: AsyncClient):
+    """Test reset a user's password"""
+
+    test_user_data = {
+        "email": "3_test@example.com"
+    }
+
+    test_reset_password_data = {
+        "password": "new_password",
+        "password_repeat": "new_password"
+    }
+
+    # First create a user
+    await async_client.post(
+        "/users/create-user",
+        params=test_user_data
+    )
+
+    response = await async_client.put(
+        "/users/reset-password",
+        params=test_user_data,
+        json=test_reset_password_data
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == test_user_data["email"]
+    assert data["is_active"] == True
+
 
 
 

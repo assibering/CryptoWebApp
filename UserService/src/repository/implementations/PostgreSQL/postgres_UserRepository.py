@@ -61,9 +61,6 @@ class UserRepository(interface_UserRepository.UserRepository):
         except ResourceAlreadyExistsException:
             raise
 
-        except BaseAppException:
-            raise
-
         except Exception as e:
             logger.exception(f"Error creating user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
@@ -74,7 +71,7 @@ class UserRepository(interface_UserRepository.UserRepository):
             result = await self.db.execute(stmt)
             db_user = result.scalar_one_or_none()
             if db_user:
-                update_fields = User_instance.dict(exclude_unset=True)
+                update_fields = User_instance.model_dump(exclude_unset=True)
 
                 for field, value in update_fields.items():
                     setattr(db_user, field, value)  # dynamically update each field

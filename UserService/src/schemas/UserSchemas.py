@@ -17,3 +17,6 @@ class User(BaseModel):
     hashed_password: Optional[str] = None
     is_active: Optional[bool] = None
 
+class UserResponse(BaseModel):
+    email: str
+    is_active: bool
