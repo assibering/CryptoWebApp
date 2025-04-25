@@ -61,9 +61,6 @@ class UserRepository(interface_UserRepository.UserRepository):
         except ResourceAlreadyExistsException:
             raise
 
-        except BaseAppException:
-            raise
-
         except Exception as e:
             logger.exception(f"Error creating user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e

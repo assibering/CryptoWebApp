@@ -11,41 +11,50 @@ class UserService:
     def __init__(self, user_repository: interface_UserRepository):
         self.user_repository = user_repository
     
-    async def get_user(self, email: str) -> UserSchemas.User:
+    async def get_user(self, email: str) -> UserSchemas.UserResponse:
         try:
-            return await self.user_repository.get_user(email)
+            user = await self.user_repository.get_user(email)
+            return UserSchemas.UserResponse(
+                email=user.email,
+                is_active=user.is_active
+            )
         except ResourceNotFoundException:
             raise #Re-raise from repository layer
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Error getting user: {str(e)}") from e
         
-    async def create_user(self, user_instance: UserSchemas.User):
+    async def create_user(self, email: str) -> UserSchemas.UserResponse:
         try:
-            # Validate the user instance
-            if user_instance.hashed_password is not None or user_instance.is_active is not None:
-                logger.warning("User instance should not contain hashed_password or is_active fields")
-                raise ValidationException("User instance should not contain hashed_password or is_active fields")
-            
             # Create the user
-            return await self.user_repository.create_user(user_instance)
+            user = await self.user_repository.create_user(
+                UserSchemas.User(
+                    email=email
+                )
+            )
+            return UserSchemas.UserResponse(
+                email=user.email,
+                is_active=user.is_active
+            )
         except ResourceAlreadyExistsException:
-            raise
-        except ValidationException:
             raise
         except Exception as e:
             logger.exception(f"Error creating user: {str(e)}")
             raise BaseAppException(f"Error creating user: {str(e)}") from e
     
-    async def reset_password(self, email: str, reset_password: UserSchemas.ResetPassword):
+    async def reset_password(self, email: str, reset_password: UserSchemas.ResetPassword) -> UserSchemas.UserResponse:
         hashed_pw = await saltAndHashedPW(reset_password.password)
         try:
-            return await self.user_repository.update_user(
+            user = await self.user_repository.update_user(
                 UserSchemas.User(
                     email=email,
                     hashed_password=hashed_pw,
                     is_active=True
                 )
+            )
+            return UserSchemas.UserResponse(
+                email=user.email,
+                is_active=user.is_active
             )
         except ResourceNotFoundException:
             raise
@@ -53,13 +62,17 @@ class UserService:
             logger.exception(f"Error updating user: {str(e)}")
             raise BaseAppException(f"Error updating user: {str(e)}") from e
     
-    async def deactivate_user(self, email: str):
+    async def deactivate_user(self, email: str) -> UserSchemas.UserResponse:
         try:
-            return await self.user_repository.update_user(
+            user = await self.user_repository.update_user(
                 UserSchemas.User(
                     email=email,
                     is_active=False
                 )
+            )
+            return UserSchemas.UserResponse(
+                email=user.email,
+                is_active=user.is_active
             )
         except ResourceNotFoundException:
             raise

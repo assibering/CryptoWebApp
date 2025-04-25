@@ -16,14 +16,14 @@ async def get_user(
 #TEMPORARY - Kafka will be used for this
 @router.post("/create-user", status_code=201)
 async def create_user(
-    User_instance: UserSchemas.User,
+    email: str,
     user_service: UserService = Depends(get_user_service)):
-    return await user_service.create_user(user_instance=User_instance)
+    return await user_service.create_user(email=email)
 
-@router.put("/reset-password", status_code=204)
+@router.put("/reset-password", status_code=201)
 async def reset_password(
     email: str,
-    sessionId: str,
+    #sessionId: str,
     reset_password: UserSchemas.ResetPassword,
     user_service: UserService = Depends(get_user_service)):
 
@@ -35,7 +35,7 @@ async def reset_password(
         reset_password=reset_password
     )
 
-@router.put("/deactivate-user", status_code=204)
+@router.put("/deactivate-user", status_code=201)
 async def deactivate_user(
     email: str,
     user_service: UserService = Depends(get_user_service)):
