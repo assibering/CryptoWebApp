@@ -26,7 +26,7 @@ services:
     build:
       context: ./UserService
       dockerfile: Dockerfile
-      target: unit-test
+      target: full-test
     container_name: crypto_user_service
     environment:
       # Set the database URL for the FastAPI application

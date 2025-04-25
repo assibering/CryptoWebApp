@@ -43,6 +43,21 @@ async def db_session(setup_database):
             yield session
             # The transaction is automatically rolled back when the context exits
 
+@pytest.fixture
+async def db_session():
+    """Create a fresh database session for each test."""
+    connection = await test_engine.connect()
+    transaction = await connection.begin()
+    
+    session = AsyncSession(bind=connection, expire_on_commit=False)
+    
+    try:
+        yield session
+    finally:
+        await session.close()
+        await transaction.rollback()
+        await connection.close()
+
 # Override the get_async_db dependency for testing
 async def override_get_async_db():
     async with TestAsyncSessionLocal() as session:
@@ -63,52 +78,3 @@ async def async_client(setup_database):
     
     # Clean up
     app.dependency_overrides.clear()
-
-# import asyncio
-# import pytest
-# from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-# from sqlalchemy.pool import NullPool
-
-# # Create test engine with NullPool
-# test_engine = create_async_engine(
-#     TEST_DATABASE_URL,
-#     echo=True,
-#     poolclass=NullPool
-# )
-
-# @pytest.fixture(scope="session", autouse=True)
-# def event_loop():
-#     """Create a single event loop for all tests."""
-#     policy = asyncio.get_event_loop_policy()
-#     loop = policy.new_event_loop()
-#     asyncio.set_event_loop(loop)
-#     yield loop
-#     loop.close()
-
-# @pytest.fixture
-# async def db_session():
-#     """Create a fresh database session for each test."""
-#     # Connect to the database
-#     connection = await test_engine.connect()
-#     # Begin a transaction
-#     transaction = await connection.begin()
-    
-#     # Create a session bound to the connection
-#     session = AsyncSession(bind=connection, expire_on_commit=False)
-    
-#     try:
-#         yield session
-#     finally:
-#         # Always close the session
-#         await session.close()
-#         # Roll back the transaction
-#         await transaction.rollback()
-#         # Close the connection
-#         await connection.close()
-
-# @pytest.fixture
-# async def async_client(setup_database):
-#     # Create the test client
-#     transport = ASGITransport(app=app)
-#     async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as client:
-#         yield client
