@@ -89,3 +89,33 @@ async def dynamodb_to_basemodel(
         )
     except Exception as e:
         raise ValueError(f"Error validating data against {basemodel.__name__}: {str(e)}")
+
+async def get_key(
+        pkey_name: str,
+        pkey_value: str | int,
+        skey_name: str = None,
+        skey_value: str | int = None
+    ) -> dict:
+    '''
+    This function generates the key schema, i.e. which item to retrieve/update/delete etc.
+    '''
+    key = {}
+    if isinstance(pkey_value, str):
+        key[pkey_name] = {'S': pkey_value}
+    elif isinstance(pkey_value, int):
+        key[pkey_name] = {'N': str(pkey_value)}
+    else:
+        raise TypeError(f"Unsupported type for partition key value: {type(pkey_value)}")
+    
+    if skey_name:
+        if not skey_value:
+            raise ValueError("No value provided for sort key")
+        else:
+            if isinstance(skey_value, str):
+                key[skey_name] = {'S': skey_value}
+            elif isinstance(skey_value, int):
+                key[skey_name] = {'N': skey_value}
+            else:
+                raise TypeError(f"Unsupported type for sort key value: {type(skey_value)}")
+    
+    return key

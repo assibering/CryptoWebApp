@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   postgresql:
@@ -21,17 +20,32 @@ services:
       timeout: 5s
       retries: 5
   
+  dynamodb-local:
+    build:
+      context: ./DynamoDB
+      dockerfile: Dockerfile
+    container_name: crypto_dynamodb
+    env_file:
+      - ./DynamoDB/.env
+    ports:
+      - "4566:4566"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
   user_service_unit:
     # Build the image from the Dockerfile in the /UserService directory
     build:
       context: ./UserService
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       target: full-test
     container_name: crypto_user_service
-    environment:
-      # Set the database URL for the FastAPI application
-      DATABASE_URL: ${DATABASE_URL}
-      TEST_DATABASE_URL: ${TEST_DATABASE_URL}
+    env_file:
+      - ./UserService/.env
 
     # Host the FastAPI application on port 8000
     ports:
@@ -40,6 +54,9 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
+      dynamodb-local:
+        condition: service_healthy
+
 
     develop:
       # Create a `watch` configuration to update the app
@@ -60,4 +77,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  dynamodb_data:
     driver: local

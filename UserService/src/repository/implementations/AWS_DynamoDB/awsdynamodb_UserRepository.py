@@ -3,6 +3,7 @@ from src.schemas import UserSchemas
 from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
 from typing import Any
+from .utils import *
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +13,30 @@ class UserRepository(interface_UserRepository.UserRepository):
         self.db = db
 
     async def get_user(self, email: str) -> UserSchemas.User:
+        '''
+        This function returns a User instance from the database.
+        Or raises an exception if the user does not exist.
+        '''
         try:
-            return
+
+            response = self.db.get_item(
+                TableName = "Users",
+                Key = await get_key(
+                    pkey_name="email",
+                    pkey_value=email
+                )
+            )
+
+            if 'Item' not in response:
+                logger.warning(f"User with email {email} not found")
+                raise ResourceNotFoundException(f"User with email {email} not found")
             
+            return await dynamodb_to_basemodel(
+                basemodel=UserSchemas.User,
+                dynamodb_data=response['Item'],
+                include_empty_string_in_stringsets=False
+            )
+        
         except ResourceNotFoundException:
             raise
 
@@ -23,23 +45,61 @@ class UserRepository(interface_UserRepository.UserRepository):
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
     async def create_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
+        '''
+        This function inserts a User instance into the database.
+        This function will not overwrite if the user already exists.
+        It will raise an exception if the user already exists.
+        This function will return the User instance.
+        '''
         try:
-            return
+            response = self.db.put_item(
+                TableName="Users",
+                Item=await basemodel_to_dynamodb(
+                    basemodel=User_instance
+                ),
+                ConditionExpression="attribute_not_exists(email)",
+                ReturnValues='ALL_NEW'
+            )
+
+            return await dynamodb_to_basemodel(
+                basemodel=UserSchemas.User,
+                dynamodb_data=response['Attributes'],
+                include_empty_string_in_stringsets=False
+            )
         
         except ResourceAlreadyExistsException:
-            raise
+            logger.warning(f"User with email {User_instance.email} already exists")
+            raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
 
         except Exception as e:
-            logger.exception(f"Error creating user: {str(e)}")
+            logger.exception(f"Internal database error: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
     async def update_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
+        '''
+        This function updates a User instance into the database.
+        This function will overwrite if the user already exists.
+        This function will return the new User instance.
+        '''
         try:
-            return
+            response = self.db.put_item(
+                TableName="Users",
+                Item=await basemodel_to_dynamodb(
+                    basemodel=User_instance
+                ),
+                ReturnValues='ALL_NEW'
+            )
             
-        except ResourceNotFoundException:
-            raise
+            return await dynamodb_to_basemodel(
+                basemodel=UserSchemas.User,
+                dynamodb_data=response['Attributes'],
+                include_empty_string_in_stringsets=False
+            )
         
+        except ResourceAlreadyExistsException:
+            logger.warning(f"User with email {User_instance.email} already exists")
+            raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
+
         except Exception as e:
-            logger.exception(f"Error updating user: {str(e)}")
+            logger.exception(f"Internal database error: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
