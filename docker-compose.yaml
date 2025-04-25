@@ -20,23 +20,6 @@ services:
       timeout: 5s
       retries: 5
   
-  dynamodb-local:
-    build:
-      context: ./DynamoDB
-      dockerfile: Dockerfile
-    container_name: crypto_dynamodb
-    env_file:
-      - ./DynamoDB/.env
-    ports:
-      - "4566:4566"
-    volumes:
-      - dynamodb_data:/home/dynamodblocal/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-  
   user_service_unit:
     # Build the image from the Dockerfile in the /UserService directory
     build:
@@ -53,8 +36,6 @@ services:
 
     depends_on:
       postgresql:
-        condition: service_healthy
-      dynamodb-local:
         condition: service_healthy
 
 
