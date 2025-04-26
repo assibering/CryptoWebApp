@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
       target: no-crypto-fetch-setup
     container_name: crypto_postgres
+    env_file:
+      - ./PostgresDB/.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -43,7 +45,7 @@ services:
     build:
       context: ./UserService
       dockerfile: Dockerfile.dev
-      target: full-test
+      target: production
     container_name: crypto_user_service
     env_file:
       - ./UserService/.env
