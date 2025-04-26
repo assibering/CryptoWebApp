@@ -20,6 +20,24 @@ services:
       timeout: 5s
       retries: 5
   
+  localstack:
+    container_name: "crypto_localstack"
+    image: localstack/localstack:latest
+    env_file:
+      - ./localstack/environments/.env.local
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
   user_service_unit:
     # Build the image from the Dockerfile in the /UserService directory
     build:
@@ -59,5 +77,5 @@ services:
 volumes:
   postgres_data:
     driver: local
-  dynamodb_data:
+  localstack_data:
     driver: local
