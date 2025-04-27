@@ -64,7 +64,7 @@ async def basemodel_to_dynamodb(
     """
     # Convert the model to a dictionary and transform it
     return {key: transform_basemodel_field_to_dynamodb_field(value, add_empty_string_to_stringsets) \
-            for key, value in basemodel.dict().items() if value is not None}
+            for key, value in basemodel.model_dump().items() if value is not None}
 
 async def dynamodb_to_basemodel(
         basemodel: Type[BaseModel],

@@ -1,32 +1,23 @@
-import boto3
 from botocore.exceptions import ClientError
+from types_aiobotocore_dynamodb import DynamoDBClient
 from src.repository.interfaces import interface_UserRepository
 from src.schemas import UserSchemas
 from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
-from typing import Any
 from .utils import *
-from src.db.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
 class UserRepository(interface_UserRepository.UserRepository):
 
-    def __init__(self, db=None):
+    def __init__(self, client: DynamoDBClient):
         """
         Initialize the DynamoDB repository.
         The db parameter is ignored (it's only here to maintain a consistent interface with PostgreSQL repository).
         """
-        settings = get_settings()
         
         # Initialize DynamoDB client
-        self.db = boto3.client(
-            'dynamodb',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_REGION,
-            endpoint_url=settings.AWS_ENDPOINT
-        )
+        self.client = client
         
         # You could also use a table name prefix from settings
         self.table_name = "users"
@@ -37,7 +28,7 @@ class UserRepository(interface_UserRepository.UserRepository):
         Or raises an exception if the user does not exist.
         '''
         try:
-            response = self.db.get_item(
+            response = await self.client.get_item(
                 TableName=self.table_name,
                 Key=await get_key(
                     pkey_name="email",
@@ -70,19 +61,20 @@ class UserRepository(interface_UserRepository.UserRepository):
         This function will return the User instance.
         '''
         try:
-            response = self.db.put_item(
+            await self.client.put_item(
                 TableName=self.table_name,
                 Item=await basemodel_to_dynamodb(
-                    basemodel=User_instance
+                    basemodel=UserSchemas.User(
+                        email=User_instance.email,
+                        is_active=True if User_instance.is_active else False
+                    )
                 ),
-                ConditionExpression="attribute_not_exists(email)",
-                ReturnValues='ALL_NEW'
+                ConditionExpression="attribute_not_exists(email)"
             )
 
-            return await dynamodb_to_basemodel(
-                basemodel=UserSchemas.User,
-                dynamodb_data=response['Attributes'],
-                include_empty_string_in_stringsets=False
+            return UserSchemas.User(
+                email=User_instance.email,
+                is_active=True if User_instance.is_active else False
             )
         
         except ClientError as e:
@@ -103,18 +95,16 @@ class UserRepository(interface_UserRepository.UserRepository):
         This function will return the new User instance.
         '''
         try:
-            response = self.db.put_item(
+            await self.client.put_item(
                 TableName=self.table_name,
                 Item=await basemodel_to_dynamodb(
                     basemodel=User_instance
-                ),
-                ReturnValues='ALL_NEW'
+                )
             )
             
-            return await dynamodb_to_basemodel(
-                basemodel=UserSchemas.User,
-                dynamodb_data=response['Attributes'],
-                include_empty_string_in_stringsets=False
+            return UserSchemas.User(
+                email=User_instance.email,
+                is_active=True if User_instance.is_active else False
             )
         
         except Exception as e:

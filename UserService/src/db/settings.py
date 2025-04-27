@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = "default_secret"
     AWS_REGION: str = "us-east-1"
     AWS_ENDPOINT: str = "http://localhost:4566"
+
+    AWS_ACCESS_KEY_ID_FOR_TESTING: str = "default_key"
+    AWS_SECRET_ACCESS_KEY_FOR_TESTING: str = "default_secret"
+    AWS_REGION_FOR_TESTING: str = "us-east-1"
+    AWS_ENDPOINT_FOR_TESTING: str = "http://localstack:4566"
     
     model_config = SettingsConfigDict(
         env_file = ".env",

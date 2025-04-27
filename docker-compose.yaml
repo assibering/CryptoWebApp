@@ -45,7 +45,7 @@ services:
     build:
       context: ./UserService
       dockerfile: Dockerfile.dev
-      target: production
+      target: full-test
     container_name: crypto_user_service
     env_file:
       - ./UserService/.env
