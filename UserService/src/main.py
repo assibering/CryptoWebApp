@@ -9,6 +9,7 @@ from src.middleware.correlation_id_middleware import CorrelationIdMiddleware
 from contextlib import asynccontextmanager
 from src.db.settings import get_settings, DatabaseType
 import aioboto3
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -22,9 +23,19 @@ async def lifespan(app: FastAPI):
     #SOME STARTUP TASKS
     # Initialize settings
     settings = get_settings()
-    
+    if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
+        # Create an async engine
+        engine = create_async_engine(settings.POSTGRES_DATABASE_URL, echo=True, future=True)
+
+        # Create an async sessionmaker factory
+        app.state.postgres_session = async_sessionmaker(
+            bind=engine,
+            expire_on_commit=False,  # optional: objects stay active after commit
+            class_=AsyncSession
+        )
+        
     # Create the aioboto3 session at application startup if using DynamoDB
-    if settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
+    elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
         logger.info("Initializing DynamoDB session")
         app.state.dynamodb_session = aioboto3.Session(
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
