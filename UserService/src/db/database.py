@@ -2,11 +2,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+POSTGRES_DATABASE_URL = os.getenv("POSTGRES_DATABASE_URL")
 
 
 # Create an async engine
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(POSTGRES_DATABASE_URL, echo=True, future=True)
 
 # Create an async sessionmaker factory
 AsyncSessionLocal = async_sessionmaker(

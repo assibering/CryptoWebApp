@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.115.12",
     "uvicorn>=0.34.1",
     "pydantic>=2.11.3",
+    "pydantic-settings>=2.9.1",
     "sqlalchemy-orm>=1.2.10",
     "sqlalchemy[asyncio]>=2.0.30",
     "asyncpg>=0.30.0",
@@ -15,7 +16,10 @@ dependencies = [
     "pytest-asyncio>=0.23.5",
     "httpx>=0.27.0",
     "pytest-cov>=4.1.0",
-    "passlib>=1.7.4"
+    "passlib>=1.7.4",
+    "boto3>=1.37.0",
+    "aioboto3>=14.1.0",
+    "types-aiobotocore-dynamodb>=2.21.1"
 ]
 
 [tool.pytest.ini_options]

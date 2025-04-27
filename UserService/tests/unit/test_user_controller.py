@@ -1,9 +1,7 @@
 from src.dependencies import get_user_service
 import pytest
 from fastapi.testclient import TestClient
-from fastapi import FastAPI
 from unittest.mock import AsyncMock
-from src.routes.UserController import router
 from src.main import app
 
 

@@ -7,14 +7,8 @@ from src.logging_config import setup_logging
 from fastapi.responses import JSONResponse
 from src.middleware.correlation_id_middleware import CorrelationIdMiddleware
 from contextlib import asynccontextmanager
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup code (runs before application startup)
-    # This is where you put code that was previously in @app.on_event("startup")
-    yield
-    # Shutdown code (runs after application shutdown)
-    # This is where you put code that was previously in @app.on_event("shutdown")
+from src.db.settings import get_settings, DatabaseType
+import aioboto3
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -24,9 +18,28 @@ async def lifespan(app: FastAPI):
     # Startup code (runs before application startup)
     # This is where you put code that was previously in @app.on_event("startup")
     logger.info("Running startup tasks...")
+
+    #SOME STARTUP TASKS
+    # Initialize settings
+    settings = get_settings()
+    
+    # Create the aioboto3 session at application startup if using DynamoDB
+    if settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
+        logger.info("Initializing DynamoDB session")
+        app.state.dynamodb_session = aioboto3.Session(
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+
     logger.info("Start up tasks completed")
     yield
     # Shutdown code (runs after application shutdown)
+    logger.info("Running shutdown tasks...")
+
+    #SOME SHUTDOWN TASKS
+
+    logger.info("Shutdown tasks completed")
     # This is where you put code that was previously in @app.on_event("shutdown")
 
 app = FastAPI(lifespan=lifespan)

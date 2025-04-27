@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 def user_service():
     """Create a UserService with a mocked repository."""
     from src.service.UserService import UserService
-    from src.repository.implementations.PostgreSQL.postgres_UserRepository import UserRepository
+    from src.repository.interfaces.interface_UserRepository import UserRepository
     
     # Create a mock repository directly
     mock_repo = AsyncMock(spec=UserRepository)
