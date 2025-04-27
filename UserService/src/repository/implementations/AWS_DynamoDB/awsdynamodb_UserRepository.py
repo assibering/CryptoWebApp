@@ -1,16 +1,35 @@
+import boto3
+from botocore.exceptions import ClientError
 from src.repository.interfaces import interface_UserRepository
 from src.schemas import UserSchemas
 from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
 from typing import Any
 from .utils import *
+from src.db.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
 class UserRepository(interface_UserRepository.UserRepository):
 
-    def __init__(self, db: Any):
-        self.db = db
+    def __init__(self, db=None):
+        """
+        Initialize the DynamoDB repository.
+        The db parameter is ignored (it's only here to maintain a consistent interface with PostgreSQL repository).
+        """
+        settings = get_settings()
+        
+        # Initialize DynamoDB client
+        self.db = boto3.client(
+            'dynamodb',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION,
+            endpoint_url=settings.AWS_ENDPOINT
+        )
+        
+        # You could also use a table name prefix from settings
+        self.table_name = "users"
 
     async def get_user(self, email: str) -> UserSchemas.User:
         '''
@@ -18,10 +37,9 @@ class UserRepository(interface_UserRepository.UserRepository):
         Or raises an exception if the user does not exist.
         '''
         try:
-
             response = self.db.get_item(
-                TableName = "Users",
-                Key = await get_key(
+                TableName=self.table_name,
+                Key=await get_key(
                     pkey_name="email",
                     pkey_value=email
                 )
@@ -53,7 +71,7 @@ class UserRepository(interface_UserRepository.UserRepository):
         '''
         try:
             response = self.db.put_item(
-                TableName="Users",
+                TableName=self.table_name,
                 Item=await basemodel_to_dynamodb(
                     basemodel=User_instance
                 ),
@@ -67,9 +85,12 @@ class UserRepository(interface_UserRepository.UserRepository):
                 include_empty_string_in_stringsets=False
             )
         
-        except ResourceAlreadyExistsException:
-            logger.warning(f"User with email {User_instance.email} already exists")
-            raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                logger.warning(f"User with email {User_instance.email} already exists")
+                raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
+            logger.exception(f"DynamoDB error: {str(e)}")
+            raise BaseAppException(f"Internal database error: {str(e)}") from e
 
         except Exception as e:
             logger.exception(f"Internal database error: {str(e)}")
@@ -83,7 +104,7 @@ class UserRepository(interface_UserRepository.UserRepository):
         '''
         try:
             response = self.db.put_item(
-                TableName="Users",
+                TableName=self.table_name,
                 Item=await basemodel_to_dynamodb(
                     basemodel=User_instance
                 ),
@@ -96,10 +117,6 @@ class UserRepository(interface_UserRepository.UserRepository):
                 include_empty_string_in_stringsets=False
             )
         
-        except ResourceAlreadyExistsException:
-            logger.warning(f"User with email {User_instance.email} already exists")
-            raise ResourceAlreadyExistsException(f"User with email {User_instance.email} already exists")
-
         except Exception as e:
             logger.exception(f"Internal database error: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
