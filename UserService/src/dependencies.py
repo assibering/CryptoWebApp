@@ -1,6 +1,5 @@
 # src/dependencies.py
 from fastapi import Depends
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from types_aiobotocore_dynamodb import DynamoDBClient
 from src.repository.interfaces.interface_UserRepository import UserRepository as UserRepositoryInterface
