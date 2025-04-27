@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient
-import json
 
 # GET USER TESTS
 @pytest.mark.asyncio(loop_scope="session")

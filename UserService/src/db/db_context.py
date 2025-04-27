@@ -1,12 +1,11 @@
 # src/db/context.py
-from typing import Callable, AsyncGenerator, Any, Optional
+from typing import Callable, AsyncGenerator, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from .database import AsyncSessionLocal
 from .settings import get_settings, DatabaseType
-import aioboto3
 from botocore.config import Config
 from types_aiobotocore_dynamodb import DynamoDBClient
 from fastapi import Request
+
 
 # Type for a dependency that yields a value
 ContextDependency = Callable[..., AsyncGenerator[Any, None]]
@@ -21,9 +20,15 @@ def get_db_context() -> ContextDependency:
     
     if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
         # Return the PostgreSQL session dependency
-        async def get_postgres_context() -> AsyncGenerator[AsyncSession, None]:
-            async with AsyncSessionLocal() as session:
-                yield session
+        async def get_postgres_context(request: Request) -> AsyncGenerator[AsyncSession, None]:
+            async_session_factory = request.app.state.postgres_session
+            async with async_session_factory() as session:
+                try:
+                    yield session
+                    await session.commit()  # Automatically commit if no exceptions
+                except Exception:
+                    await session.rollback()  # Rollback on exceptions
+                    raise
         return get_postgres_context
     elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
         # Return a DynamoDB context using the app-wide session

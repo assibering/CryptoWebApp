@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, Dict, Type, List
+from typing import Any, Dict, Type
 
 def transform_basemodel_field_to_dynamodb_field(
     value: Any,
