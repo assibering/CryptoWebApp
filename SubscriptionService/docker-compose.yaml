@@ -1,0 +1,34 @@
+## From the example docker-compose.yaml file provided by uv
+## https://github.com/astral-sh/uv-docker-example
+## https://github.com/astral-sh/uv-docker-example/blob/main/compose.yml
+
+services:
+  web:
+    # Build the image from the Dockerfile in the current directory
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+
+    # Host the FastAPI application on port 8001
+    ports:
+      - "8001:8001"
+    environment:
+      # Set the database URL for the FastAPI application
+      DATABASE_URL: ${DATABASE_URL}
+
+    develop:
+      # Create a `watch` configuration to update the app
+      # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: rebuild
+          path: .
+          target: /app
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .venv/
+
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
