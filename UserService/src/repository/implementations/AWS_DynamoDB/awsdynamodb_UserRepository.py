@@ -61,7 +61,7 @@ class UserRepository(interface_UserRepository.UserRepository):
         This function will return the User instance.
         '''
         try:
-            await self.client.put_item(
+            response = await self.client.put_item(
                 TableName=self.table_name,
                 Item=await basemodel_to_dynamodb(
                     basemodel=UserSchemas.User(
@@ -89,24 +89,27 @@ class UserRepository(interface_UserRepository.UserRepository):
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
     async def update_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
-        '''
-        This function updates a User instance into the database.
-        This function will overwrite if the user already exists.
-        This function will return the new User instance.
-        '''
+        """
+        This function updates a User instance using put_item with a condition.
+        It ensures the user exists before proceeding with the update.
+        It returns the updated User instance.
+        """
         try:
-            await self.client.put_item(
+            response = await self.client.put_item(
                 TableName=self.table_name,
-                Item=await basemodel_to_dynamodb(
-                    basemodel=User_instance
-                )
+                Item=await basemodel_to_dynamodb(basemodel=User_instance),
+                ConditionExpression="attribute_exists(email)"  # Ensures user exists
             )
             
             return UserSchemas.User(
                 email=User_instance.email,
-                is_active=True if User_instance.is_active else False
+                is_active=User_instance.is_active
             )
-        
+            
+        except self.client.exceptions.ConditionalCheckFailedException:
+            # Raised when ConditionExpression fails (user does not exist)
+            raise ResourceNotFoundException(f"User with email {User_instance.email} not found")
         except Exception as e:
             logger.exception(f"Internal database error: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
+
