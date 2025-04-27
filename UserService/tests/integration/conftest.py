@@ -6,7 +6,7 @@ from sqlalchemy import text
 import boto3
 import aioboto3
 
-from src.db.database import Base
+from src.repository.implementations.PostgreSQL.models.ORM_User import Base
 from src.db.db_context import db_context
 from src.main import app
 from src.db.settings import get_settings, DatabaseType
