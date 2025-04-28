@@ -9,8 +9,8 @@ class DatabaseType(str, Enum):
 class Settings(BaseSettings):
     # Database settings
     DATABASE_TYPE: DatabaseType = DatabaseType.POSTGRES
-    POSTGRES_DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/crypto_db"
-    POSTGRES_DATABASE_URL_FOR_TESTING: str = "postgresql+asyncpg://postgres:password@localhost:5432/crypto_db"
+    POSTGRES_DATABASE_URL: str = "postgresql+asyncpg://user:password@postgresql:5432/crypto_db"
+    POSTGRES_DATABASE_URL_FOR_TESTING: str = "postgresql+asyncpg://postgres:password@postgresql:5432/crypto_db"
     
     # AWS settings
     AWS_ACCESS_KEY_ID: str = "default_key"

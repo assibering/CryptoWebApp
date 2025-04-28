@@ -1,4 +1,4 @@
--- File: /opt/sql/setup.sql
+-- File: /opt/sql/setup_no_crypto.sql
 
 \connect crypto_db;
 

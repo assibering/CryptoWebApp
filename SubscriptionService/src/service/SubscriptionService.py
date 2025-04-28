@@ -23,8 +23,8 @@ class SubscriptionService:
         except ResourceNotFoundException:
             raise #Re-raise from repository layer
         except Exception as e:
-            logger.exception(f"Error getting user: {str(e)}")
-            raise BaseAppException(f"Error getting user: {str(e)}") from e
+            logger.exception(f"Error getting subscription: {str(e)}")
+            raise BaseAppException(f"Error getting subscription: {str(e)}") from e
     
     async def create_subscription(
             self,
@@ -38,7 +38,7 @@ class SubscriptionService:
                     subscription_id=subscription_id,
                     subscription_type=subscription_create.subscription_type,
                     email=subscription_create.email,
-                    is_active=subscription_create.is_active
+                    is_active=True # Default to True on creation
                 )
             )
 
@@ -47,10 +47,10 @@ class SubscriptionService:
                 subscription_id=subscription.subscription_id,
                 subscription_type=subscription.subscription_type,
                 email=subscription.email,
-                is_active=subscription.is_active
+                is_active=True
             )
         except ResourceAlreadyExistsException:
             raise
         except Exception as e:
-            logger.exception(f"Error creating user: {str(e)}")
-            raise BaseAppException(f"Error creating user: {str(e)}") from e
+            logger.exception(f"Error creating subscription: {str(e)}")
+            raise BaseAppException(f"Error creating subscription: {str(e)}") from e
