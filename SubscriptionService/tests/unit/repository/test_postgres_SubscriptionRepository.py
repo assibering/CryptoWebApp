@@ -11,7 +11,7 @@ def mock_db():
     return mock
 
 @pytest.fixture
-def user_repo(mock_db):
-    """Create a UserRepository instance with a mock db."""
+def subscription_repo(mock_db):
+    """Create a SubscriptionRepository instance with a mock db."""
     from src.repository.implementations.PostgreSQL.postgres_SubscriptionRepository import SubscriptionRepository
     return SubscriptionRepository(db=mock_db)

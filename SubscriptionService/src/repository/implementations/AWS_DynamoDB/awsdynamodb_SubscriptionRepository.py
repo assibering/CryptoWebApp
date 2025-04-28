@@ -8,7 +8,7 @@ from .utils import *
 
 logger = logging.getLogger(__name__)
 
-class UserRepository(interface_SubscriptionRepository.SubscriptionRepository):
+class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionRepository):
 
     def __init__(self, client: DynamoDBClient):
         """

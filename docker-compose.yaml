@@ -75,6 +75,42 @@ services:
         # Rebuild the image if dependencies change by checking uv.lock
         - action: rebuild
           path: ./uv.lock
+  
+  subscription_service_unit:
+    # Build the image from the Dockerfile in the /UserService directory
+    build:
+      context: ./SubscriptionService
+      dockerfile: Dockerfile.dev
+      target: full-test #unit-test, integration-test, full-test, production (no tests are run)
+    container_name: crypto_subscription_service
+    env_file:
+      - ./SubscriptionService/.env
+
+    # Host the FastAPI application on port 8000
+    ports:
+      - "8001:8001"
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+
+    develop:
+      # Create a `watch` configuration to update the app
+      # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: rebuild
+          path: .
+          target: /app
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .venv/
+
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
 
 volumes:
   postgres_data:
