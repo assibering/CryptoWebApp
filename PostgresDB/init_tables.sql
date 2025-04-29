@@ -68,10 +68,32 @@ CREATE TABLE IF NOT EXISTS auth.users (
     is_active BOOLEAN
 );
 
+-- create the users outbox table
+CREATE TABLE auth.users_outbox (
+    id UUID PRIMARY KEY,
+    transaction_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed BOOLEAN NOT NULL DEFAULT FALSE,
+    processed_at TIMESTAMPTZ
+);
+
 -- Create the subscriptions table
 CREATE TABLE IF NOT EXISTS auth.subscriptions (
-    subscription_id VARCHAR(200) PRIMARY KEY,
+    subscription_id UUID PRIMARY KEY,
     subscription_type VARCHAR(50) NOT NULL,
     email VARCHAR(50) NOT NULL,
     is_active BOOLEAN NOT NULL
+);
+
+-- create the subscriptions outbox table
+CREATE TABLE auth.subscriptions_outbox (
+    id UUID PRIMARY KEY,
+    transaction_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed BOOLEAN NOT NULL DEFAULT FALSE,
+    processed_at TIMESTAMPTZ
 );

@@ -44,8 +44,8 @@ GRANT USAGE ON SCHEMA auth TO user_service_user;
 GRANT USAGE ON SCHEMA auth TO subscription_service_user;
 
 -- Grant read/write/delete
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE auth.users TO user_service_user;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE auth.subscriptions TO subscription_service_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE auth.users, auth.users_outbox TO user_service_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE auth.subscriptions, auth.subscriptions_outbox TO subscription_service_user;
 
 -- Verify grants were applied (will show error if tables don't exist)
 DO $$
