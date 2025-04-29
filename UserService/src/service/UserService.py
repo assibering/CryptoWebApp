@@ -1,7 +1,7 @@
 from src.repository.interfaces import interface_UserRepository
 from src.schemas import UserSchemas
 from .utils import saltAndHashedPW
-from src.exceptions import BaseAppException, ResourceNotFoundException, ValidationException, ResourceAlreadyExistsException
+from src.exceptions import BaseAppException, ResourceNotFoundException, ResourceAlreadyExistsException
 import logging
 
 logger = logging.getLogger(__name__)

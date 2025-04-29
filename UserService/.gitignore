@@ -1,3 +1,5 @@
 **/.env
 **/.vscode
 **/volume
+**/.venv**
+**/uv.lock
