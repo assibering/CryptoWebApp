@@ -19,7 +19,8 @@ dependencies = [
     "passlib>=1.7.4",
     "boto3>=1.37.0",
     "aioboto3>=14.1.0",
-    "types-aiobotocore-dynamodb>=2.21.1"
+    "types-aiobotocore-dynamodb>=2.21.1",
+    "uuid6>=2024.7.10"
 ]
 
 [tool.pytest.ini_options]

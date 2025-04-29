@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS auth.users (
 );
 
 -- create the users outbox table
-CREATE TABLE auth.users_outbox (
+CREATE TABLE IF NOT EXISTS auth.users_outbox (
     id UUID PRIMARY KEY,
     transaction_id TEXT NOT NULL,
     event_type TEXT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS auth.subscriptions (
 );
 
 -- create the subscriptions outbox table
-CREATE TABLE auth.subscriptions_outbox (
+CREATE TABLE IF NOT EXISTS auth.subscriptions_outbox (
     id UUID PRIMARY KEY,
     transaction_id TEXT NOT NULL,
     event_type TEXT NOT NULL,

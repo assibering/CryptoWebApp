@@ -24,13 +24,14 @@ class UserService:
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Error getting user: {str(e)}") from e
         
-    async def create_user(self, email: str) -> UserSchemas.UserResponse:
+    async def create_user(self, email: str, transaction_id: str) -> UserSchemas.UserResponse:
         try:
             # Create the user
             user = await self.user_repository.create_user(
-                UserSchemas.User(
+                User_instance = UserSchemas.User(
                     email=email
-                )
+                ),
+                transaction_id = transaction_id
             )
             return UserSchemas.UserResponse(
                 email=user.email,
