@@ -67,3 +67,11 @@ CREATE TABLE IF NOT EXISTS auth.users (
     hashed_password VARCHAR(200), -- hashed (including salt)
     is_active BOOLEAN
 );
+
+-- Create the subscriptions table
+CREATE TABLE IF NOT EXISTS auth.subscriptions (
+    subscription_id VARCHAR(200) PRIMARY KEY,
+    subscription_type VARCHAR(50) NOT NULL,
+    email VARCHAR(50) NOT NULL,
+    is_active BOOLEAN NOT NULL
+);
