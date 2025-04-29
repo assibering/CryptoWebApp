@@ -1,12 +1,27 @@
-from sqlalchemy import Column, String, Boolean
-from sqlalchemy.orm import declarative_base
+import uuid6
+import datetime
+from sqlalchemy import Column, String, Boolean, TIMESTAMP, JSON
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 class SubscriptionORM(Base):
     __tablename__ = "subscriptions"
     __table_args__ = {"schema": "auth"}
-    subscription_id = Column(String, primary_key=True, unique=True, index=True, nullable=False)
+    subscription_id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index= True, default=uuid6.uuid6)
     subscription_type = Column(String, nullable=True)
     email = Column(String, nullable=False)
     is_active = Column(Boolean, default=False)
+
+class SubscriptionsOutboxORM(Base):
+    __tablename__ = "subscriptions_outbox"
+    __table_args__ = {"schema": "auth"}  # Specifies the schema
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid6.uuid6)
+    transaction_id = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    processed = Column(Boolean, nullable=False, default=False)
+    processed_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    payload = Column(JSON, nullable=False)

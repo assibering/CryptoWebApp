@@ -28,18 +28,20 @@ class SubscriptionService:
     
     async def create_subscription(
             self,
-            subscription_create: SubscriptionSchemas.CreateSubscription
+            subscription_create: SubscriptionSchemas.CreateSubscription,
+            transaction_id: str
         ) -> SubscriptionSchemas.SubscriptionResponse:
         subscription_id = generate_unique_id()
         try:
             # Create the subscription
             subscription = await self.subscription_repository.create_subscription(
-                SubscriptionSchemas.Subscription(
+                Subscription_instance = SubscriptionSchemas.Subscription(
                     subscription_id=subscription_id,
                     subscription_type=subscription_create.subscription_type,
                     email=subscription_create.email,
                     is_active=True # Default to True on creation
-                )
+                ),
+                transaction_id = transaction_id
             )
 
             # Return the subscription response
@@ -47,8 +49,9 @@ class SubscriptionService:
                 subscription_id=subscription.subscription_id,
                 subscription_type=subscription.subscription_type,
                 email=subscription.email,
-                is_active=True
+                is_active=subscription.is_active
             )
+        
         except ResourceAlreadyExistsException:
             raise
         except Exception as e:

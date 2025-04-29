@@ -2,7 +2,7 @@ from src.repository.interfaces import interface_SubscriptionRepository
 from src.schemas import SubscriptionSchemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.repository.implementations.PostgreSQL.models.ORM_Subscription import SubscriptionORM
+from src.repository.implementations.PostgreSQL.models.ORM_Subscription import SubscriptionORM, SubscriptionsOutboxORM
 from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
 from sqlalchemy.exc import IntegrityError
@@ -39,7 +39,8 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
     
     async def create_subscription(
             self,
-            Subscription_instance: SubscriptionSchemas.Subscription
+            Subscription_instance: SubscriptionSchemas.Subscription,
+            transaction_id: str,
         ) -> SubscriptionSchemas.Subscription:
         try:
             db_subscription = SubscriptionORM(
@@ -49,18 +50,72 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 is_active=False if Subscription_instance.is_active == False else True #default to True
             )
 
-            self.db.add(db_subscription)
-            await self.db.commit()
-            await self.db.refresh(db_subscription)
+            outbox_event = SubscriptionsOutboxORM(
+                transaction_id = transaction_id,
+                event_type="subscription_created_success",
+                processed = False, # Yet to be processes by outbox producer (same for processed_at)
+                processed_at = None,
+                payload={
+                    "subscription_id": db_subscription.subscription_id,
+                    "subscription_type": db_subscription.subscription_type,
+                    "email": db_subscription.email,
+                    "is_active": db_subscription.is_active
+                }
+            )
 
-            return db_subscription
+            # Start transaction
+            async with self.db.begin():  # This ensures atomicity
+                self.db.add(db_subscription)
+                self.db.add(outbox_event)
+            
+            return SubscriptionSchemas.Subscription(
+                subscription_id = db_subscription.subscription_id,
+                subscription_type = db_subscription.subscription_type,
+                email = db_subscription.email,
+                is_active = db_subscription.is_active
+            )
         
         except IntegrityError as e:
             if "UniqueViolationError" in str(e.orig):
                 logger.warning(f"Subscription with subscription_id {Subscription_instance.subscription_id} already exists")
+
+                fail_event = SubscriptionsOutboxORM(
+                    transaction_id = transaction_id,
+                    event_type="subscription_created_failed",
+                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
+                    processed_at = None,
+                    payload={
+                        "subscription_id": db_subscription.subscription_id,
+                        "subscription_type": db_subscription.subscription_type,
+                        "email": db_subscription.email,
+                        "is_active": db_subscription.is_active
+                    }
+                )
+
+                async with self.db.begin():
+                    self.db.add(fail_event)
+
                 raise ResourceAlreadyExistsException(f"Subscription with subscription_id {Subscription_instance.subscription_id} already exists")
             else:
                 # Some other kind of IntegrityError (e.g., null value, foreign key constraint, etc)
+                logger.exception(f"Error creating user: {str(e)}")
+
+                fail_event = SubscriptionsOutboxORM(
+                    transaction_id = transaction_id,
+                    event_type="subscription_created_failed",
+                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
+                    processed_at = None,
+                    payload={
+                        "subscription_id": db_subscription.subscription_id,
+                        "subscription_type": db_subscription.subscription_type,
+                        "email": db_subscription.email,
+                        "is_active": db_subscription.is_active
+                    }
+                )
+
+                async with self.db.begin():
+                    self.db.add(fail_event)
+
                 raise BaseAppException(f"Database integrity error: {str(e)}") from e
             
         except ResourceAlreadyExistsException:
@@ -68,4 +123,21 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
 
         except Exception as e:
             logger.exception(f"Error creating subscription: {str(e)}")
+
+            fail_event = SubscriptionsOutboxORM(
+                transaction_id = transaction_id,
+                event_type="subscription_created_failed",
+                processed = False, # Yet to be processes by outbox producer (same for processed_at)
+                processed_at = None,
+                payload={
+                    "subscription_id": db_subscription.subscription_id,
+                    "subscription_type": db_subscription.subscription_type,
+                    "email": db_subscription.email,
+                    "is_active": db_subscription.is_active
+                }
+            )
+
+            async with self.db.begin():
+                self.db.add(fail_event)
+
             raise BaseAppException(f"Internal database error: {str(e)}") from e
