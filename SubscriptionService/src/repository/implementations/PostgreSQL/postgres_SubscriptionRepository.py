@@ -46,7 +46,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 subscription_id=Subscription_instance.subscription_id,
                 subscription_type=Subscription_instance.subscription_type,
                 email=Subscription_instance.email,
-                is_active=False if Subscription_instance.is_active else True #default to True
+                is_active=False if Subscription_instance.is_active == False else True #default to True
             )
 
             self.db.add(db_subscription)
