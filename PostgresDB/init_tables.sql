@@ -71,12 +71,12 @@ CREATE TABLE IF NOT EXISTS auth.users (
 -- create the users outbox table
 CREATE TABLE IF NOT EXISTS auth.users_outbox (
     id UUID PRIMARY KEY,
-    transaction_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
+    aggregatetype TEXT NOT NULL,
+    aggregateid TEXT NOT NULL,
+    type TEXT NOT NULL,
     payload JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    processed BOOLEAN NOT NULL DEFAULT FALSE,
-    processed_at TIMESTAMPTZ
+    transaction_id TEXT
 );
 
 -- Create the subscriptions table
@@ -90,10 +90,10 @@ CREATE TABLE IF NOT EXISTS auth.subscriptions (
 -- create the subscriptions outbox table
 CREATE TABLE IF NOT EXISTS auth.subscriptions_outbox (
     id UUID PRIMARY KEY,
-    transaction_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
+    aggregatetype TEXT NOT NULL,
+    aggregateid TEXT NOT NULL,
+    type TEXT NOT NULL,
     payload JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    processed BOOLEAN NOT NULL DEFAULT FALSE,
-    processed_at TIMESTAMPTZ
+    transaction_id TEXT
 );

@@ -44,14 +44,11 @@ class UserRepository(interface_UserRepository.UserRepository):
             )
 
             outbox_event = UsersOutboxORM(
-                transaction_id = transaction_id,
-                event_type="user_created_success",
-                processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                processed_at = None,
-                payload={
-                    "email": db_user.email,
-                    "is_active": db_user.is_active
-                }
+                aggregatetype = "user",
+                aggregateid = User_instance.email,
+                type = "user_created_success",
+                payload = User_instance.model_dump(exclude={"hashed_password"}),
+                transaction_id = transaction_id
             )
 
             # Start transaction
@@ -69,14 +66,11 @@ class UserRepository(interface_UserRepository.UserRepository):
                 logger.warning(f"User with email {User_instance.email} already exists")
 
                 fail_event = UsersOutboxORM(
-                    transaction_id = transaction_id,
-                    event_type="user_created_failed",
-                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                    processed_at = None,
-                    payload={
-                        "email": db_user.email,
-                        "is_active": db_user.is_active
-                    }
+                    aggregatetype = "user",
+                    aggregateid = User_instance.email,
+                    type = "user_created_failed",
+                    payload = User_instance.model_dump(exclude={"hashed_password"}),
+                    transaction_id = transaction_id
                 )
 
                 async with self.db.begin():
@@ -88,14 +82,11 @@ class UserRepository(interface_UserRepository.UserRepository):
                 logger.exception(f"Error creating user: {str(e)}")
 
                 fail_event = UsersOutboxORM(
-                    transaction_id = transaction_id,
-                    event_type="user_created_failed",
-                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                    processed_at = None,
-                    payload={
-                        "email": db_user.email,
-                        "is_active": db_user.is_active
-                    }
+                    aggregatetype = "user",
+                    aggregateid = User_instance.email,
+                    type = "user_created_failed",
+                    payload = User_instance.model_dump(exclude={"hashed_password"}),
+                    transaction_id = transaction_id
                 )
 
                 async with self.db.begin():
@@ -110,14 +101,11 @@ class UserRepository(interface_UserRepository.UserRepository):
             logger.exception(f"Error creating user: {str(e)}")
 
             fail_event = UsersOutboxORM(
-                transaction_id = transaction_id,
-                event_type="user_created_failed",
-                processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                processed_at = None,
-                payload={
-                    "email": db_user.email,
-                    "is_active": db_user.is_active
-                }
+                aggregatetype = "user",
+                aggregateid = User_instance.email,
+                type = "user_created_failed",
+                payload = User_instance.model_dump(exclude={"hashed_password"}),
+                transaction_id = transaction_id
             )
 
             async with self.db.begin():

@@ -18,9 +18,9 @@ class UsersOutboxORM(Base):
     __table_args__ = {"schema": "auth"}  # Specifies the schema
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid6.uuid6)
-    transaction_id = Column(String, nullable=False)
-    event_type = Column(String, nullable=False)
+    aggregatetype = Column(String, nullable=False)     # e.g., "user"
+    aggregateid = Column(String, nullable=False)       # e.g., user_id
+    type = Column(String, nullable=False)              # e.g., "user_created_success"
+    payload = Column(JSON, nullable=False)             # Event data as JSON
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.datetime.now(datetime.timezone.utc))
-    processed = Column(Boolean, nullable=False, default=False)
-    processed_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    payload = Column(JSON, nullable=False)
+    transaction_id = Column(String, nullable=True)     # Optional, for SAGA tracing
