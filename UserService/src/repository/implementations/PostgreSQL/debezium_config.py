@@ -17,6 +17,7 @@ async def generate_config_dict(settings):
             "plugin.name": "pgoutput",
             "publication.name": "dbz_publication",
             "tombstones.on.delete": "false",
+            'topic.prefix': 'userservice',
 
             "transforms": "outbox",
             "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
