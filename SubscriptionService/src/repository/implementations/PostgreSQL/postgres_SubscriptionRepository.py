@@ -51,7 +51,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             )
 
             outbox_event = SubscriptionsOutboxORM(
-                aggregatetype = "subscription",
+                aggregatetype = "subscription", # -> TOPIC
                 aggregateid = Subscription_instance.email,
                 type = "subscription_created_success",
                 payload = Subscription_instance.model_dump(),

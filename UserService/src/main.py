@@ -10,6 +10,9 @@ from contextlib import asynccontextmanager
 from src.db.settings import get_settings, DatabaseType
 import aioboto3
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+import os
+import httpx
+from src.repository.implementations.PostgreSQL.debezium_config import generate_config_dict
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -33,6 +36,15 @@ async def lifespan(app: FastAPI):
             expire_on_commit=False,  # optional: objects stay active after commit
             class_=AsyncSession
         )
+
+        # Create Debezium connector
+        connector_config = await generate_config_dict(
+            settings=settings
+        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(settings.DEBEZIUM_URL, json=connector_config)
+            if resp.status_code not in {201, 409}: # Created (201) or Already Exists (409)
+                raise RuntimeError(f"Failed to register Debezium connector: {resp.status_code} {resp.text}")
         
     # Create the aioboto3 session at application startup if using DynamoDB
     elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:

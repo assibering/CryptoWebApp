@@ -7,11 +7,23 @@ class DatabaseType(str, Enum):
     DYNAMODB = "dynamodb"
 
 class Settings(BaseSettings):
-    # Database settings
-    DATABASE_TYPE: DatabaseType = DatabaseType.POSTGRES
+    DATABASE_TYPE: DatabaseType = DatabaseType.POSTGRES # Default to postgres
+
+    # --------------------------------------------------------------------
+    # Postgres settings
     POSTGRES_DATABASE_URL: str = "postgresql+asyncpg://user:password@postgresql:5432/crypto_db"
     POSTGRES_DATABASE_URL_FOR_TESTING: str = "postgresql+asyncpg://postgres:password@postgresql:5432/crypto_db"
     
+    # Debezium settings (only related to postgres)
+    DB_HOST: str = "postgresql"
+    DB_PORT: str = "5432"
+    DB_USER: str = "subscription_service_user"
+    DB_PASSWORD: str = "super_secure_password"
+    DB_NAME: str = "crypto_db"
+    DEBEZIUM_URL: str = "http://debezium:8083/connectors"
+    # --------------------------------------------------------------------
+
+    # --------------------------------------------------------------------
     # AWS settings
     AWS_ACCESS_KEY_ID: str = "default_key"
     AWS_SECRET_ACCESS_KEY: str = "default_secret"
@@ -27,6 +39,7 @@ class Settings(BaseSettings):
         env_file = ".env",
         case_sensitive = True
     )
+    # --------------------------------------------------------------------
 
 
 @lru_cache()

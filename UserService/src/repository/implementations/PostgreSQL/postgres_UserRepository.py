@@ -44,7 +44,7 @@ class UserRepository(interface_UserRepository.UserRepository):
             )
 
             outbox_event = UsersOutboxORM(
-                aggregatetype = "user",
+                aggregatetype = "user", # -> TOPIC
                 aggregateid = User_instance.email,
                 type = "user_created_success",
                 payload = User_instance.model_dump(exclude={"hashed_password"}),
