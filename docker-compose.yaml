@@ -60,7 +60,7 @@ services:
       kafka:
         condition: service_started
       debezium:
-        condition: service_started
+        condition: service_healthy
 
 
     develop:
@@ -100,7 +100,7 @@ services:
       kafka:
         condition: service_started
       debezium:
-        condition: service_started
+        condition: service_healthy
 
 
     develop:
@@ -157,7 +157,14 @@ services:
       OFFSET_STORAGE_TOPIC: debezium_connect_offsets
       STATUS_STORAGE_TOPIC: debezium_connect_statuses
     depends_on:
-      - kafka
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/connectors"]
+      interval: 10s
+      timeout: 30s
+      retries: 20
+      start_period: 30s
 
 volumes:
   postgres_data:
