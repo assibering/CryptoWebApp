@@ -37,6 +37,7 @@ async def consume():
             event_type = event.get("type")
             payload = event.get("payload")
             # Handle the event based on its type
+            logger.info(f"msg: {msg}, event: {event}")
             logger.info(f"Received event type: {event_type}, payload: {payload}")
     finally:
         await consumer.stop()

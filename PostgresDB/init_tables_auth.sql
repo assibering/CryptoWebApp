@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS auth.users_outbox (
     id UUID PRIMARY KEY,
     aggregatetype TEXT NOT NULL,
     aggregateid TEXT NOT NULL,
-    type TEXT NOT NULL,
+    eventtype TEXT NOT NULL,
     payload JSONB NOT NULL,
     created_at BIGINT NOT NULL,
     transaction_id TEXT
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS auth.subscriptions_outbox (
     id UUID PRIMARY KEY,
     aggregatetype TEXT NOT NULL,
     aggregateid TEXT NOT NULL,
-    type TEXT NOT NULL,
+    eventtype TEXT NOT NULL,
     payload JSONB NOT NULL,
     created_at BIGINT NOT NULL,
     transaction_id TEXT

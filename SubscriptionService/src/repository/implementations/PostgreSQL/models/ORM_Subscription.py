@@ -21,7 +21,7 @@ class SubscriptionsOutboxORM(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid6.uuid6)
     aggregatetype = Column(String, nullable=False)     # e.g., "subscription" -> TOPIC
     aggregateid = Column(String, nullable=False)       # e.g., "subscription_id"
-    type = Column(String, nullable=False)              # e.g., "subscription_created_success"
+    eventtype = Column(String, nullable=False)              # e.g., "subscription_created_success"
     payload = Column(JSON, nullable=False)             # Event data as JSON
     created_at = Column(BigInteger, nullable=False, default=lambda: int(datetime.now(timezone.utc).timestamp() * 1000))
     transaction_id = Column(String, nullable=True)     # Optional, for SAGA tracing

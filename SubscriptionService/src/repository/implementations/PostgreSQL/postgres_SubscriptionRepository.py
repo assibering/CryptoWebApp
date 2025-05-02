@@ -53,7 +53,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             outbox_event = SubscriptionsOutboxORM(
                 aggregatetype = "subscription", # -> TOPIC
                 aggregateid = Subscription_instance.email,
-                type = "subscription_created_success",
+                eventtype = "subscription_created_success",
                 payload = Subscription_instance.model_dump(),
                 transaction_id = transaction_id
             )
@@ -77,7 +77,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 fail_event = SubscriptionsOutboxORM(
                     aggregatetype = "subscription",
                     aggregateid = Subscription_instance.email,
-                    type = "subscription_created_failed",
+                    eventtype = "subscription_created_failed",
                     payload = Subscription_instance.model_dump(),
                     transaction_id = transaction_id
                 )
@@ -93,7 +93,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 fail_event = SubscriptionsOutboxORM(
                     aggregatetype = "subscription",
                     aggregateid = Subscription_instance.email,
-                    type = "subscription_created_failed",
+                    eventtype = "subscription_created_failed",
                     payload = Subscription_instance.model_dump(),
                     transaction_id = transaction_id
                 )
@@ -112,7 +112,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             fail_event = SubscriptionsOutboxORM(
                 aggregatetype = "subscription",
                 aggregateid = Subscription_instance.email,
-                type = "subscription_created_failed",
+                eventtype = "subscription_created_failed",
                 payload = Subscription_instance.model_dump(),
                 transaction_id = transaction_id
             )

@@ -46,7 +46,7 @@ class UserRepository(interface_UserRepository.UserRepository):
             outbox_event = UsersOutboxORM(
                 aggregatetype = "user", # -> TOPIC
                 aggregateid = User_instance.email,
-                type = "user_created_success",
+                eventtype = "user_created_success",
                 payload = User_instance.model_dump(exclude={"hashed_password"}),
                 transaction_id = transaction_id
             )
@@ -68,7 +68,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 fail_event = UsersOutboxORM(
                     aggregatetype = "user",
                     aggregateid = User_instance.email,
-                    type = "user_created_failed",
+                    eventtype = "user_created_failed",
                     payload = User_instance.model_dump(exclude={"hashed_password"}),
                     transaction_id = transaction_id
                 )
@@ -84,7 +84,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 fail_event = UsersOutboxORM(
                     aggregatetype = "user",
                     aggregateid = User_instance.email,
-                    type = "user_created_failed",
+                    eventtype = "user_created_failed",
                     payload = User_instance.model_dump(exclude={"hashed_password"}),
                     transaction_id = transaction_id
                 )
@@ -103,7 +103,7 @@ class UserRepository(interface_UserRepository.UserRepository):
             fail_event = UsersOutboxORM(
                 aggregatetype = "user",
                 aggregateid = User_instance.email,
-                type = "user_created_failed",
+                eventtype = "user_created_failed",
                 payload = User_instance.model_dump(exclude={"hashed_password"}),
                 transaction_id = transaction_id
             )

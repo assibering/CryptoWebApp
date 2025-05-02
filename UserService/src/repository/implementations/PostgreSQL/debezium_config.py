@@ -27,10 +27,12 @@ async def generate_config_dict(settings):
 
             "transforms.outbox.field.event.id": "id",
             "transforms.outbox.field.event.key": "aggregateid",
-            "transforms.outbox.field.event.type": "type",
+            "transforms.outbox.field.event.type": "eventtype",
             "transforms.outbox.field.event.payload": "payload",
             "transforms.outbox.field.event.timestamp": "created_at",
             "transforms.outbox.field.event.timestamp.type": "io.debezium.time.Timestamp",
-            "transforms.outbox.expand.json.payload": "true"
+
+            "transforms.outbox.expand.json.payload": "true",
+            "transforms.outbox.fields.additional.placement": "eventtype:envelope:type"
         }
     }

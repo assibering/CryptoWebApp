@@ -146,7 +146,7 @@ services:
       - ./tmp/kraft-combined-logs:/tmp/kraft-combined-logs
 
   debezium:
-    image: debezium/connect:2.6
+    image: quay.io/debezium/connect:latest
     container_name: debezium
     ports:
       - "${DEBEZIUM_PORT:-8083}:8083"
