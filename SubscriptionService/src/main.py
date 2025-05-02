@@ -12,9 +12,34 @@ import aioboto3
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 import httpx
 from src.repository.implementations.PostgreSQL.debezium_config import generate_config_dict
+from aiokafka import AIOKafkaConsumer
+import json
+import asyncio
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+
+KAFKA_BOOTSTRAP_SERVERS = "kafka:29092"
+KAFKA_TOPICS = ["userservice.user"]  # Add all relevant topics
+
+async def consume():
+    consumer = AIOKafkaConsumer(
+        *KAFKA_TOPICS,
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+        group_id="my_group",
+        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+    )
+    await consumer.start()
+    try:
+        async for msg in consumer:
+            event = msg.value
+            event_type = event.get("type")
+            payload = event.get("payload")
+            # Handle the event based on its type
+            logger.info(f"Received event type: {event_type}, payload: {payload}")
+    finally:
+        await consumer.stop()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,12 +79,17 @@ async def lifespan(app: FastAPI):
             region_name=settings.AWS_REGION
         )
 
-    logger.info("Start up tasks completed")
+    # Start Kafka consumer as a background task
+    consumer_task = asyncio.create_task(consume())
+    app.state.consumer_task = consumer_task
+
+    logger.info("Startup tasks completed")
     yield
     # Shutdown code (runs after application shutdown)
     logger.info("Running shutdown tasks...")
 
     #SOME SHUTDOWN TASKS
+    consumer_task.cancel()
 
     logger.info("Shutdown tasks completed")
     # This is where you put code that was previously in @app.on_event("shutdown")

@@ -1,6 +1,6 @@
 import uuid6
-import datetime
-from sqlalchemy import Column, String, Boolean, TIMESTAMP, JSON
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, Boolean, BigInteger, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -23,5 +23,5 @@ class SubscriptionsOutboxORM(Base):
     aggregateid = Column(String, nullable=False)       # e.g., "subscription_id"
     type = Column(String, nullable=False)              # e.g., "subscription_created_success"
     payload = Column(JSON, nullable=False)             # Event data as JSON
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    created_at = Column(BigInteger, nullable=False, default=lambda: int(datetime.now(timezone.utc).timestamp() * 1000))
     transaction_id = Column(String, nullable=True)     # Optional, for SAGA tracing

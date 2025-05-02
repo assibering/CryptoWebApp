@@ -15,20 +15,22 @@ async def generate_config_dict(settings):
             "schema.include.list": "auth",
             "table.include.list": "auth.users_outbox",
             "plugin.name": "pgoutput",
-            "publication.name": "dbz_publication",
+            "publication.name": "dbz_publication_user",
             "tombstones.on.delete": "false",
-            'topic.prefix': 'userservice',
+            "topic.prefix": "userservice",
+            "slot.name": "debezium_user",
 
             "transforms": "outbox",
             "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
             "transforms.outbox.route.by.field": "aggregatetype",
-            "transforms.outbox.route.topic.replacement": "${routedByValue}",
+            "transforms.outbox.route.topic.replacement": "userservice.${routedByValue}",
 
-            "transforms.outbox.table.field.event.id": "id",
-            "transforms.outbox.table.field.event.key": "aggregateid",
-            "transforms.outbox.table.field.event.type": "type",
-            "transforms.outbox.table.field.event.payload": "payload",
-            "transforms.outbox.table.field.event.timestamp": "created_at",
+            "transforms.outbox.field.event.id": "id",
+            "transforms.outbox.field.event.key": "aggregateid",
+            "transforms.outbox.field.event.type": "type",
+            "transforms.outbox.field.event.payload": "payload",
+            "transforms.outbox.field.event.timestamp": "created_at",
+            "transforms.outbox.field.event.timestamp.type": "io.debezium.time.Timestamp",
             "transforms.outbox.expand.json.payload": "true"
         }
     }

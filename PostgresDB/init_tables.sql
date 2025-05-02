@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS auth.users_outbox (
     aggregateid TEXT NOT NULL,
     type TEXT NOT NULL,
     payload JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at BIGINT NOT NULL,
     transaction_id TEXT
 );
 
@@ -94,6 +94,6 @@ CREATE TABLE IF NOT EXISTS auth.subscriptions_outbox (
     aggregateid TEXT NOT NULL,
     type TEXT NOT NULL,
     payload JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at BIGINT NOT NULL,
     transaction_id TEXT
 );
