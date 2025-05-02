@@ -33,6 +33,6 @@ async def generate_config_dict(settings):
             "transforms.outbox.field.event.timestamp.type": "io.debezium.time.Timestamp",
 
             "transforms.outbox.expand.json.payload": "true",
-            "transforms.outbox.fields.additional.placement": "eventtype:envelope:type"
+            "transforms.outbox.table.fields.additional.placement": "eventtype:envelope:type"
         }
     }
