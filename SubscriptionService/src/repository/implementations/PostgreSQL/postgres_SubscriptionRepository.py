@@ -21,7 +21,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             db_subscription = result.scalar_one_or_none()
             if db_subscription:    
                 return SubscriptionSchemas.Subscription(
-                    subscription_id=db_subscription.subscription_id,
+                    subscription_id=str(db_subscription.subscription_id),
                     subscription_type=db_subscription.subscription_type,
                     email=db_subscription.email,
                     is_active=db_subscription.is_active
@@ -62,7 +62,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 self.db.add(outbox_event)
             
             return SubscriptionSchemas.Subscription(
-                subscription_id = db_subscription.subscription_id,
+                subscription_id = str(db_subscription.subscription_id),
                 subscription_type = db_subscription.subscription_type,
                 email = db_subscription.email,
                 is_active = db_subscription.is_active

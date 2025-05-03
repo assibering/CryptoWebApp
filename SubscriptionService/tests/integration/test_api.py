@@ -38,13 +38,13 @@ async def test_get_nonexistent_subscription(async_client: AsyncClient):
 
     response = await async_client.get(
         "/subscriptions",
-        params={"subscription_id": "nonexistent_id"}
+        params={"subscription_id": "a3301a70-6d24-467e-a6f8-a4d074d0bda7"}
     )
     
     assert response.status_code == 404
     data = response.json()
     assert 'error' in data
-    assert data["error"] == f"Subscription with subscription_id nonexistent_id not found"
+    assert data["error"] == f"Subscription with subscription_id a3301a70-6d24-467e-a6f8-a4d074d0bda7 not found"
 
 
 #CREATE USER TESTS

@@ -45,7 +45,7 @@ services:
     build:
       context: ./UserService
       dockerfile: Dockerfile.dev
-      target: unit-test #unit-test, integration-test, full-test, production (no tests are run)
+      target: full-test #unit-test, integration-test, full-test, production (no tests are run)
     container_name: crypto_user_service
     env_file:
       - ./UserService/.env
@@ -85,7 +85,7 @@ services:
     build:
       context: ./SubscriptionService
       dockerfile: Dockerfile.dev
-      target: unit-test #unit-test, integration-test, full-test, production (no tests are run)
+      target: full-test #unit-test, integration-test, full-test, production (no tests are run)
     container_name: crypto_subscription_service
     env_file:
       - ./SubscriptionService/.env
