@@ -98,7 +98,7 @@ async def test_create_subscription_success(
 
     # Verify the repository method was called correctly
     subscription_service.subscription_repository.create_subscription.assert_called_once_with(
-        sample_subscription_active
+        Subscription_instance=sample_subscription_active
     )
     
     # Assertions
