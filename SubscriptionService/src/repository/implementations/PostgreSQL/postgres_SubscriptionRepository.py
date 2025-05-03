@@ -39,8 +39,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
     
     async def create_subscription(
             self,
-            Subscription_instance: SubscriptionSchemas.Subscription,
-            transaction_id: str,
+            Subscription_instance: SubscriptionSchemas.Subscription
         ) -> SubscriptionSchemas.Subscription:
         try:
             db_subscription = SubscriptionORM(
@@ -51,16 +50,10 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             )
 
             outbox_event = SubscriptionsOutboxORM(
-                transaction_id = transaction_id,
-                event_type="subscription_created_success",
-                processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                processed_at = None,
-                payload={
-                    "subscription_id": db_subscription.subscription_id,
-                    "subscription_type": db_subscription.subscription_type,
-                    "email": db_subscription.email,
-                    "is_active": db_subscription.is_active
-                }
+                aggregatetype = "subscription", # -> TOPIC
+                aggregateid = Subscription_instance.email,
+                eventtype = "subscription_created_success",
+                payload = Subscription_instance.model_dump()
             )
 
             # Start transaction
@@ -80,16 +73,10 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 logger.warning(f"Subscription with subscription_id {Subscription_instance.subscription_id} already exists")
 
                 fail_event = SubscriptionsOutboxORM(
-                    transaction_id = transaction_id,
-                    event_type="subscription_created_failed",
-                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                    processed_at = None,
-                    payload={
-                        "subscription_id": db_subscription.subscription_id,
-                        "subscription_type": db_subscription.subscription_type,
-                        "email": db_subscription.email,
-                        "is_active": db_subscription.is_active
-                    }
+                    aggregatetype = "subscription",
+                    aggregateid = Subscription_instance.email,
+                    eventtype = "subscription_created_failed",
+                    payload = Subscription_instance.model_dump()
                 )
 
                 async with self.db.begin():
@@ -101,16 +88,10 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 logger.exception(f"Error creating user: {str(e)}")
 
                 fail_event = SubscriptionsOutboxORM(
-                    transaction_id = transaction_id,
-                    event_type="subscription_created_failed",
-                    processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                    processed_at = None,
-                    payload={
-                        "subscription_id": db_subscription.subscription_id,
-                        "subscription_type": db_subscription.subscription_type,
-                        "email": db_subscription.email,
-                        "is_active": db_subscription.is_active
-                    }
+                    aggregatetype = "subscription",
+                    aggregateid = Subscription_instance.email,
+                    eventtype = "subscription_created_failed",
+                    payload = Subscription_instance.model_dump()
                 )
 
                 async with self.db.begin():
@@ -125,16 +106,10 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             logger.exception(f"Error creating subscription: {str(e)}")
 
             fail_event = SubscriptionsOutboxORM(
-                transaction_id = transaction_id,
-                event_type="subscription_created_failed",
-                processed = False, # Yet to be processes by outbox producer (same for processed_at)
-                processed_at = None,
-                payload={
-                    "subscription_id": db_subscription.subscription_id,
-                    "subscription_type": db_subscription.subscription_type,
-                    "email": db_subscription.email,
-                    "is_active": db_subscription.is_active
-                }
+                aggregatetype = "subscription",
+                aggregateid = Subscription_instance.email,
+                eventtype = "subscription_created_failed",
+                payload = Subscription_instance.model_dump()
             )
 
             async with self.db.begin():

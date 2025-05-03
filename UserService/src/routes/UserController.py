@@ -17,9 +17,8 @@ async def get_user(
 @router.post("/create-user", status_code=201)
 async def create_user(
     email: str,
-    transaction_id: str,
     user_service: UserService = Depends(get_user_service)):
-    return await user_service.create_user(email=email, transaction_id=transaction_id)
+    return await user_service.create_user(email=email)
 
 @router.put("/reset-password", status_code=201)
 async def reset_password(

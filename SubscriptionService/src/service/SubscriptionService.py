@@ -28,8 +28,7 @@ class SubscriptionService:
     
     async def create_subscription(
             self,
-            subscription_create: SubscriptionSchemas.CreateSubscription,
-            transaction_id: str
+            subscription_create: SubscriptionSchemas.CreateSubscription
         ) -> SubscriptionSchemas.SubscriptionResponse:
         subscription_id = generate_unique_id()
         try:
@@ -40,8 +39,7 @@ class SubscriptionService:
                     subscription_type=subscription_create.subscription_type,
                     email=subscription_create.email,
                     is_active=True # Default to True on creation
-                ),
-                transaction_id = transaction_id
+                )
             )
 
             # Return the subscription response
