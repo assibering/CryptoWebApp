@@ -15,8 +15,7 @@ CREATE TABLE IF NOT EXISTS auth.users_outbox (
     aggregateid TEXT NOT NULL,
     eventtype TEXT NOT NULL,
     payload JSONB NOT NULL,
-    created_at BIGINT NOT NULL,
-    transaction_id TEXT
+    created_at BIGINT NOT NULL
 );
 
 -- Create the subscriptions table
@@ -34,6 +33,5 @@ CREATE TABLE IF NOT EXISTS auth.subscriptions_outbox (
     aggregateid TEXT NOT NULL,
     eventtype TEXT NOT NULL,
     payload JSONB NOT NULL,
-    created_at BIGINT NOT NULL,
-    transaction_id TEXT
+    created_at BIGINT NOT NULL
 );

@@ -35,7 +35,7 @@ class UserRepository(interface_UserRepository.UserRepository):
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
-    async def create_user(self, User_instance: UserSchemas.User, transaction_id: str) -> UserSchemas.User:
+    async def create_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
         try:
             db_user = UserORM(
                 email=User_instance.email,
@@ -47,8 +47,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 aggregatetype = "user", # -> TOPIC
                 aggregateid = User_instance.email,
                 eventtype = "user_created_success",
-                payload = User_instance.model_dump(exclude={"hashed_password"}),
-                transaction_id = transaction_id
+                payload = User_instance.model_dump(exclude={"hashed_password"})
             )
 
             # Start transaction
@@ -69,8 +68,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                     aggregatetype = "user",
                     aggregateid = User_instance.email,
                     eventtype = "user_created_failed",
-                    payload = User_instance.model_dump(exclude={"hashed_password"}),
-                    transaction_id = transaction_id
+                    payload = User_instance.model_dump(exclude={"hashed_password"})
                 )
 
                 async with self.db.begin():
@@ -85,8 +83,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                     aggregatetype = "user",
                     aggregateid = User_instance.email,
                     eventtype = "user_created_failed",
-                    payload = User_instance.model_dump(exclude={"hashed_password"}),
-                    transaction_id = transaction_id
+                    payload = User_instance.model_dump(exclude={"hashed_password"})
                 )
 
                 async with self.db.begin():
@@ -104,8 +101,7 @@ class UserRepository(interface_UserRepository.UserRepository):
                 aggregatetype = "user",
                 aggregateid = User_instance.email,
                 eventtype = "user_created_failed",
-                payload = User_instance.model_dump(exclude={"hashed_password"}),
-                transaction_id = transaction_id
+                payload = User_instance.model_dump(exclude={"hashed_password"})
             )
 
             async with self.db.begin():

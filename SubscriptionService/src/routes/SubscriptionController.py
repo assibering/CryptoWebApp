@@ -15,7 +15,6 @@ async def get_subscription(
 
 @router.post("/create-subscription", status_code=201)
 async def create_subscription(
-    transaction_id: str,
     subscription_create: SubscriptionSchemas.CreateSubscription,
     subscription_service: SubscriptionService = Depends(get_subscription_service)):
-    return await subscription_service.create_subscription(subscription_create=subscription_create, transaction_id=transaction_id)
+    return await subscription_service.create_subscription(subscription_create=subscription_create)

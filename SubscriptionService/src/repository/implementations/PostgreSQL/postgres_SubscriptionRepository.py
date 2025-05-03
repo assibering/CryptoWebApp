@@ -39,8 +39,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
     
     async def create_subscription(
             self,
-            Subscription_instance: SubscriptionSchemas.Subscription,
-            transaction_id: str,
+            Subscription_instance: SubscriptionSchemas.Subscription
         ) -> SubscriptionSchemas.Subscription:
         try:
             db_subscription = SubscriptionORM(
@@ -54,8 +53,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 aggregatetype = "subscription", # -> TOPIC
                 aggregateid = Subscription_instance.email,
                 eventtype = "subscription_created_success",
-                payload = Subscription_instance.model_dump(),
-                transaction_id = transaction_id
+                payload = Subscription_instance.model_dump()
             )
 
             # Start transaction
@@ -78,8 +76,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                     aggregatetype = "subscription",
                     aggregateid = Subscription_instance.email,
                     eventtype = "subscription_created_failed",
-                    payload = Subscription_instance.model_dump(),
-                    transaction_id = transaction_id
+                    payload = Subscription_instance.model_dump()
                 )
 
                 async with self.db.begin():
@@ -94,8 +91,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                     aggregatetype = "subscription",
                     aggregateid = Subscription_instance.email,
                     eventtype = "subscription_created_failed",
-                    payload = Subscription_instance.model_dump(),
-                    transaction_id = transaction_id
+                    payload = Subscription_instance.model_dump()
                 )
 
                 async with self.db.begin():
@@ -113,8 +109,7 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 aggregatetype = "subscription",
                 aggregateid = Subscription_instance.email,
                 eventtype = "subscription_created_failed",
-                payload = Subscription_instance.model_dump(),
-                transaction_id = transaction_id
+                payload = Subscription_instance.model_dump()
             )
 
             async with self.db.begin():

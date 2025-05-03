@@ -24,4 +24,3 @@ class SubscriptionsOutboxORM(Base):
     eventtype = Column(String, nullable=False)              # e.g., "subscription_created_success"
     payload = Column(JSON, nullable=False)             # Event data as JSON
     created_at = Column(BigInteger, nullable=False, default=lambda: int(datetime.now(timezone.utc).timestamp() * 1000))
-    transaction_id = Column(String, nullable=True)     # Optional, for SAGA tracing

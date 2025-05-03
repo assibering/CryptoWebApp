@@ -50,6 +50,9 @@ COPY --from=builder /usr/share/postgresql /usr/share/postgresql
 # Copy custom postgresql.conf
 COPY postgresql.conf /etc/postgresql/postgresql.conf
 
+# Copy custom pg_hba.conf
+COPY pg_hba.conf /etc/postgresql/pg_hba.conf
+
 # Set proper permissions for the entrypoint directory
 RUN chown -R postgres:postgres /docker-entrypoint-initdb.d/
 

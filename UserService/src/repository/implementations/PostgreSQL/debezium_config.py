@@ -36,3 +36,32 @@ async def generate_config_dict(settings):
             "transforms.outbox.table.fields.additional.placement": "eventtype:envelope:type"
         }
     }
+
+# CONSUMER CONSUMES:
+# ConsumerRecord(
+#     topic='userservice.user',
+#     partition=0,
+#     offset=0,
+#     timestamp=1746240679362,
+#     timestamp_type=0,
+#     key=b'{"schema":{"type":"string","optional":false},"payload":"dummy@email.com"}',
+#     value={
+#         'schema': {
+#             'type': 'struct',
+#             'fields': [
+#                 {'type': 'string', 'optional': False, 'name': 'io.debezium.data.Json', 'version': 1, 'field': 'payload'},
+#                 {'type': 'string', 'optional': False, 'field': 'type'}
+#             ],
+#             'optional': False,
+#             'name': 'userservice.auth.users_outbox.user.Value'
+#         },
+#         'payload': {
+#             'payload': '{"email": "dummy@email.com", "is_active": null}',
+#             'type': 'user_created_success'
+#         }
+#     },
+#     checksum=None,
+#     serialized_key_size=73,
+#     serialized_value_size=360,
+#     headers=(('id', b'1f027c97-d169-63a8-9cbf-56b86948d5eb'),)
+# )
