@@ -4,7 +4,7 @@ import logging
 from src.logging_config import setup_logging
 from typing import Dict, List, Any
 from aiokafka import AIOKafkaConsumer
-from src.exceptions import ResourceAlreadyExistsException, BaseAppException
+from src.exceptions import ResourceAlreadyExistsException, BaseAppException, ResourceNotFoundException
 from src.db.db_context import get_db_session_for_background
 from src.db.factory import create_user_repository
 from src.service.UserService import UserService
@@ -62,6 +62,19 @@ class SubscriptionCreatedFailedHandler(EventHandler):
         logger.info(f"Processing subscription_created_failed event: {payload}")
         # Implement your user update logic here
         # Delete the previously created user
+        try:
+            async for db_session in get_db_session_for_background():
+                user_repository = create_user_repository(db_session)
+                user_service = UserService(user_repository)
+                
+                await user_service.delete_user(email=payload.get("email"))
+                # No need to close the session - it's handled by the generator
+
+        except ResourceNotFoundException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error creating user: {str(e)}")
+            raise BaseAppException(f"Error creating user: {str(e)}") from e
 
 class KafkaEventManager:
     """Manages Kafka event consumption and routing to appropriate handlers"""
