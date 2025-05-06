@@ -116,3 +116,72 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 self.db.add(fail_event)
 
             raise BaseAppException(f"Internal database error: {str(e)}") from e
+        
+
+    async def create_subscription_outbox(
+            self,
+            CreateSubscription_instance: SubscriptionSchemas.CreateSubscription
+        ) -> None:
+        try:
+
+            outbox_event = SubscriptionsOutboxORM(
+                aggregatetype = "subscription", # -> TOPIC
+                aggregateid = CreateSubscription_instance.email,
+                eventtype = "subscription_initialised_success",
+                payload = CreateSubscription_instance.model_dump()
+            )
+
+            # Start transaction
+            async with self.db.begin():
+                self.db.add(outbox_event)
+            
+            return
+        
+        except IntegrityError as e:
+            if "UniqueViolationError" in str(e.orig):
+                logger.warning(f"Outbox event with id {outbox_event.id} already exists")
+
+                fail_event = SubscriptionsOutboxORM(
+                    aggregatetype = "subscription",
+                    aggregateid = CreateSubscription_instance.email,
+                    eventtype = "subscription_initialised_failed",
+                    payload = CreateSubscription_instance.model_dump()
+                )
+
+                async with self.db.begin():
+                    self.db.add(fail_event)
+
+                raise ResourceAlreadyExistsException(f"Outbox event with id {outbox_event.id} already exists")
+            else:
+                # Some other kind of IntegrityError (e.g., null value, foreign key constraint, etc)
+                logger.exception(f"Error creating outbox event: {str(e)}")
+
+                fail_event = SubscriptionsOutboxORM(
+                    aggregatetype = "subscription",
+                    aggregateid = CreateSubscription_instance.email,
+                    eventtype = "subscription_initialised_failed",
+                    payload = CreateSubscription_instance.model_dump()
+                )
+
+                async with self.db.begin():
+                    self.db.add(fail_event)
+
+                raise BaseAppException(f"Database integrity error: {str(e)}") from e
+            
+        except ResourceAlreadyExistsException:
+            raise
+
+        except Exception as e:
+            logger.exception(f"Error creating subscription: {str(e)}")
+
+            fail_event = SubscriptionsOutboxORM(
+                aggregatetype = "subscription",
+                aggregateid = CreateSubscription_instance.email,
+                eventtype = "subscription_initialised_failed",
+                payload = CreateSubscription_instance.model_dump()
+            )
+
+            async with self.db.begin():
+                self.db.add(fail_event)
+
+            raise BaseAppException(f"Internal database error: {str(e)}") from e

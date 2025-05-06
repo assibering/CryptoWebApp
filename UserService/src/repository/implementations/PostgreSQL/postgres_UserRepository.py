@@ -35,7 +35,10 @@ class UserRepository(interface_UserRepository.UserRepository):
             logger.exception(f"Error getting user: {str(e)}")
             raise BaseAppException(f"Internal database error: {str(e)}") from e
 
-    async def create_user(self, User_instance: UserSchemas.User) -> UserSchemas.User:
+    async def create_user(
+            self,
+            User_instance: UserSchemas.User
+        ) -> UserSchemas.User:
         try:
             db_user = UserORM(
                 email=User_instance.email,

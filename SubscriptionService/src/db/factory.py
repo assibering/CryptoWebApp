@@ -7,7 +7,7 @@ from src.repository.implementations.AWS_DynamoDB.awsdynamodb_SubscriptionReposit
 from .settings import get_settings, DatabaseType
 from typing import Union
 
-def create_user_repository(db_context: Union[AsyncSession, DynamoDBClient]) -> SubscriptionRepositoryInterface:
+def create_subscription_repository(db_context: Union[AsyncSession, DynamoDBClient]) -> SubscriptionRepositoryInterface:
     """
     Creates the appropriate repository based on configuration.
     For PostgreSQL: Uses the provided database session

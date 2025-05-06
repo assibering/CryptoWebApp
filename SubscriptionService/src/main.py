@@ -15,31 +15,10 @@ from src.repository.implementations.PostgreSQL.debezium_config import generate_c
 from aiokafka import AIOKafkaConsumer
 import json
 import asyncio
+from src.consumer.kafka import event_manager, setup_kafka_handlers
 
 setup_logging()
 logger = logging.getLogger(__name__)
-
-
-KAFKA_BOOTSTRAP_SERVERS = "kafka:29092"
-KAFKA_TOPICS = ["userservice.user"]  # Add all relevant topics
-
-async def consume():
-    consumer = AIOKafkaConsumer(
-        *KAFKA_TOPICS,
-        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-        group_id="my_group",
-        value_deserializer=lambda m: json.loads(m.decode('utf-8'))
-    )
-    await consumer.start()
-    try:
-        async for msg in consumer:
-            event = msg.value
-            event_type = event.get("payload").get("type")
-            payload = event.get("payload").get("payload")
-            # Handle the event based on its type
-            logger.info(f"Received event type: {event_type}, payload: {payload}")
-    finally:
-        await consumer.stop()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -80,8 +59,7 @@ async def lifespan(app: FastAPI):
         )
 
     # Start Kafka consumer as a background task
-    consumer_task = asyncio.create_task(consume())
-    app.state.consumer_task = consumer_task
+    await setup_kafka_handlers()
 
     logger.info("Startup tasks completed")
     yield
@@ -89,7 +67,10 @@ async def lifespan(app: FastAPI):
     logger.info("Running shutdown tasks...")
 
     #SOME SHUTDOWN TASKS
-    consumer_task.cancel()
+    
+    # Shutdown: stop Kafka consumer gracefully
+    logger.info("Stopping Kafka consumer...")
+    await event_manager.stop()
 
     logger.info("Shutdown tasks completed")
     # This is where you put code that was previously in @app.on_event("shutdown")

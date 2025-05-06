@@ -55,3 +55,41 @@ def get_db_context() -> ContextDependency:
 
 # Create the context dependency based on current configuration
 db_context = get_db_context()
+
+# Session for Kafka
+async def get_db_session_for_background():
+    """Creates a database session for background tasks like Kafka consumers"""
+    settings = get_settings()
+    
+    if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        
+        # Create engine and session factory
+        engine = create_async_engine(settings.POSTGRES_DATABASE_URL)
+        async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        
+        # Create and return a session
+        async with async_session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+    elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
+        import aioboto3
+        session = aioboto3.Session()
+        
+        async with session.client(
+            'dynamodb',
+            endpoint_url=settings.AWS_ENDPOINT,
+            config=Config(
+                connect_timeout=5.0,
+                read_timeout=10.0,
+                retries={'max_attempts': 3}
+            )
+        ) as dynamodb_client:
+            yield dynamodb_client
+    else:
+        raise ValueError("Invalid DATABASE_TYPE")
+

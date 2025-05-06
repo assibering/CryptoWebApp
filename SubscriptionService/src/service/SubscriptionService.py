@@ -55,3 +55,27 @@ class SubscriptionService:
         except Exception as e:
             logger.exception(f"Error creating subscription: {str(e)}")
             raise BaseAppException(f"Error creating subscription: {str(e)}") from e
+    
+
+    async def create_subscription_outbox(
+            self,
+            subscription_create: SubscriptionSchemas.CreateSubscription
+        ) -> None:
+        try:
+            # Create the outbox record
+            # To trigger user creation event
+            await self.subscription_repository.create_subscription_outbox(
+                CreateSubscription_instance = SubscriptionSchemas.CreateSubscription(
+                    subscription_type=subscription_create.subscription_type,
+                    email=subscription_create.email
+                )
+            )
+
+            # Return the subscription response
+            return
+        
+        except ResourceAlreadyExistsException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error creating subscription: {str(e)}")
+            raise BaseAppException(f"Error creating subscription: {str(e)}") from e

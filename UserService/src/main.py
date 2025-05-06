@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 import os
 import httpx
 from src.repository.implementations.PostgreSQL.debezium_config import generate_config_dict
+from src.consumer.kafka import event_manager, setup_kafka_handlers
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -55,12 +56,19 @@ async def lifespan(app: FastAPI):
             region_name=settings.AWS_REGION
         )
 
-    logger.info("Start up tasks completed")
+    # Start Kafka consumer as a background task
+    await setup_kafka_handlers()
+
+    logger.info("Startup tasks completed")
     yield
     # Shutdown code (runs after application shutdown)
     logger.info("Running shutdown tasks...")
 
     #SOME SHUTDOWN TASKS
+    
+    # Shutdown: stop Kafka consumer gracefully
+    logger.info("Stopping Kafka consumer...")
+    await event_manager.stop()
 
     logger.info("Shutdown tasks completed")
     # This is where you put code that was previously in @app.on_event("shutdown")
