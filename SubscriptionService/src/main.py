@@ -10,6 +10,12 @@ from contextlib import asynccontextmanager
 from src.db.settings import get_settings, DatabaseType
 import aioboto3
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+import httpx
+from src.repository.implementations.PostgreSQL.debezium_config import generate_config_dict
+from aiokafka import AIOKafkaConsumer
+import json
+import asyncio
+from src.consumer.kafka import event_manager, setup_kafka_handlers
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -33,6 +39,15 @@ async def lifespan(app: FastAPI):
             expire_on_commit=False,  # optional: objects stay active after commit
             class_=AsyncSession
         )
+
+        # Create Debezium connector
+        connector_config = await generate_config_dict(
+            settings=settings
+        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(settings.DEBEZIUM_URL, json=connector_config)
+            if resp.status_code not in {201, 409}: # Created (201) or Already Exists (409)
+                raise RuntimeError(f"Failed to register Debezium connector: {resp.status_code} {resp.text}")
         
     # Create the aioboto3 session at application startup if using DynamoDB
     elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
@@ -43,12 +58,19 @@ async def lifespan(app: FastAPI):
             region_name=settings.AWS_REGION
         )
 
-    logger.info("Start up tasks completed")
+    # Start Kafka consumer as a background task
+    await setup_kafka_handlers()
+
+    logger.info("Startup tasks completed")
     yield
     # Shutdown code (runs after application shutdown)
     logger.info("Running shutdown tasks...")
 
     #SOME SHUTDOWN TASKS
+    
+    # Shutdown: stop Kafka consumer gracefully
+    logger.info("Stopping Kafka consumer...")
+    await event_manager.stop()
 
     logger.info("Shutdown tasks completed")
     # This is where you put code that was previously in @app.on_event("shutdown")

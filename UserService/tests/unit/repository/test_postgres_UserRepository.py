@@ -8,6 +8,9 @@ from sqlalchemy.exc import IntegrityError
 def mock_db():
     """Create a mock AsyncSession for testing."""
     mock = AsyncMock(spec=AsyncSession)
+    # Setup the async context manager for begin()
+    context_manager = AsyncMock()
+    mock.begin.return_value = context_manager
     return mock
 
 @pytest.fixture
@@ -100,9 +103,12 @@ async def test_create_user_success(user_repo, mock_db, sample_user):
     # Assertions
     assert result.email == sample_user.email
     assert result.is_active == sample_user.is_active
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
-    mock_db.refresh.assert_called_once()
+    
+    # Verify that begin() was called for the transaction
+    mock_db.begin.assert_called_once()
+    
+    # Verify that add() was called twice (user + outbox event)
+    assert mock_db.add.call_count == 2
 
 @pytest.mark.asyncio
 async def test_create_user_already_exists(user_repo, mock_db, sample_user):
@@ -114,15 +120,31 @@ async def test_create_user_already_exists(user_repo, mock_db, sample_user):
     unique_violation = Exception("UniqueViolationError")
     integrity_error = IntegrityError("statement", "params", unique_violation)
     integrity_error.orig = unique_violation
-    mock_db.commit.side_effect = integrity_error
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = integrity_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
     
     # Test that the correct exception is raised
     with pytest.raises(ResourceAlreadyExistsException) as exc_info:
         await user_repo.create_user(sample_user)
     
     assert "already exists" in str(exc_info.value)
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial user + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
 async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user):
@@ -134,15 +156,31 @@ async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user
     other_error = Exception("Other constraint violation")
     integrity_error = IntegrityError("statement", "params", other_error)
     integrity_error.orig = other_error
-    mock_db.commit.side_effect = integrity_error
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = integrity_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
         await user_repo.create_user(sample_user)
     
     assert "Database integrity error" in str(exc_info.value)
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial user + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
 async def test_create_user_general_exception(user_repo, mock_db, sample_user):
@@ -151,15 +189,32 @@ async def test_create_user_general_exception(user_repo, mock_db, sample_user):
     from src.exceptions import BaseAppException
     
     # Setup mock to raise a general exception
-    mock_db.commit.side_effect = Exception("Unexpected error")
+    general_error = Exception("Unexpected error")
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = general_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
         await user_repo.create_user(sample_user)
     
     assert "Internal database error" in str(exc_info.value)
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial user + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
 
 # Tests for update_user method
 @pytest.mark.asyncio
