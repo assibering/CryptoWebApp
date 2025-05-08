@@ -28,7 +28,7 @@ class UserService:
         try:
             # Create the user
             user = await self.user_repository.create_user(
-                UserSchemas.User(
+                User_instance = UserSchemas.User(
                     email=email
                 )
             )
@@ -79,5 +79,15 @@ class UserService:
         except Exception as e:
             logger.exception(f"Error deactivating user: {str(e)}")
             raise BaseAppException(f"Error deactivating user: {str(e)}") from e
-        
     
+    async def delete_user(self, email: str) -> None:
+        try:
+            await self.user_repository.delete_user(
+                email = email
+            )
+
+        except ResourceNotFoundException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error deactivating user: {str(e)}")
+            raise BaseAppException(f"Error deactivating user: {str(e)}") from e

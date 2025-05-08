@@ -38,7 +38,7 @@ RUN mkdir -p /opt/sql/functions /opt/sql/schedules && \
 # In this case we execute init_db.sql first and then we execute setup.sql
 COPY --chown=postgres:postgres init_db.sql /docker-entrypoint-initdb.d/00_init_db.sql
 COPY --chown=postgres:postgres setup_no_crypto.sql /docker-entrypoint-initdb.d/01_setup_no_crypto.sql
-COPY --chown=postgres:postgres init_tables.sql /opt/sql/
+COPY --chown=postgres:postgres init_tables_auth.sql /opt/sql/
 COPY --chown=postgres:postgres authorised_services.sql /opt/sql/
 COPY --chown=postgres:postgres functions/ /opt/sql/functions/
 COPY --chown=postgres:postgres schedules/ /opt/sql/schedules/
@@ -49,6 +49,9 @@ COPY --from=builder /usr/share/postgresql /usr/share/postgresql
 
 # Copy custom postgresql.conf
 COPY postgresql.conf /etc/postgresql/postgresql.conf
+
+# Copy custom pg_hba.conf
+COPY pg_hba.conf /etc/postgresql/pg_hba.conf
 
 # Set proper permissions for the entrypoint directory
 RUN chown -R postgres:postgres /docker-entrypoint-initdb.d/

@@ -10,6 +10,7 @@ class SubscriptionRepository(ABC):
     ) -> SubscriptionSchemas.Subscription:
         
         pass
+    
 
     @abstractmethod
     async def create_subscription(

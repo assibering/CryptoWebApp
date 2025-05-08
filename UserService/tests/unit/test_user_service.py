@@ -140,7 +140,7 @@ async def test_create_user_success(
 
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
-        UserSchemas.User(
+        User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
         )
     )
@@ -167,7 +167,7 @@ async def test_create_user_already_exists(user_service, sample_user_inactive_nop
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
-        UserSchemas.User(
+        User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
         )
     )
@@ -192,7 +192,7 @@ async def test_create_user_other_integrity_error(user_service, sample_user_inact
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
-        UserSchemas.User(
+        User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
         )
     )
@@ -218,7 +218,7 @@ async def test_create_user_general_exception(user_service, sample_user_inactive_
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
-        UserSchemas.User(
+        User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
         )
     )

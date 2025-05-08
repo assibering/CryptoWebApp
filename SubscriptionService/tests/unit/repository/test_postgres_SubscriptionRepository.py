@@ -8,6 +8,9 @@ from sqlalchemy.exc import IntegrityError
 def mock_db():
     """Create a mock AsyncSession for testing."""
     mock = AsyncMock(spec=AsyncSession)
+    # Setup the async context manager for begin()
+    context_manager = AsyncMock()
+    mock.begin.return_value = context_manager
     return mock
 
 @pytest.fixture
@@ -24,7 +27,7 @@ def sample_subscription():
         subscription_id="1_unique_id",
         subscription_type="free_tier",
         email="test@example.com",
-        is_active = True
+        is_active=True
     )
 
 @pytest.fixture
@@ -33,7 +36,7 @@ def db_subscription():
     from src.repository.implementations.PostgreSQL.models.ORM_Subscription import SubscriptionORM
     subscription = MagicMock(spec=SubscriptionORM)
     subscription.subscription_id = "1_unique_id"
-    subscription.subscription_type= "free_tier"
+    subscription.subscription_type = "free_tier"
     subscription.email = "test@example.com"
     subscription.is_active = True
     return subscription
@@ -98,7 +101,6 @@ async def test_get_subscription_database_error(subscription_repo, mock_db):
 @pytest.mark.asyncio
 async def test_create_subscription_success(subscription_repo, mock_db, sample_subscription):
     """Test successful subscription creation."""
-
     # Call the method
     result = await subscription_repo.create_subscription(sample_subscription)
     
@@ -106,9 +108,84 @@ async def test_create_subscription_success(subscription_repo, mock_db, sample_su
     assert result.subscription_type == sample_subscription.subscription_type 
     assert result.email == sample_subscription.email
     assert result.is_active == True
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
-    mock_db.refresh.assert_called_once()
+    
+    # Verify that begin() was called for the transaction
+    mock_db.begin.assert_called_once()
+    
+    # Verify that add() was called twice (subscription + outbox event)
+    assert mock_db.add.call_count == 2
+
+@pytest.mark.asyncio
+async def test_create_subscription_already_exists(subscription_repo, mock_db, sample_subscription):
+    """Test subscription already exists scenario."""
+    # Import inside test function
+    from src.exceptions import ResourceAlreadyExistsException
+    
+    # Setup mock to raise IntegrityError with UniqueViolationError
+    unique_violation = Exception("UniqueViolationError")
+    integrity_error = IntegrityError("statement", "params", unique_violation)
+    integrity_error.orig = unique_violation
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = integrity_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
+    
+    # Test that the correct exception is raised
+    with pytest.raises(ResourceAlreadyExistsException) as exc_info:
+        await subscription_repo.create_subscription(sample_subscription)
+    
+    assert "already exists" in str(exc_info.value)
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial subscription + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
+
+@pytest.mark.asyncio
+async def test_create_subscription_other_integrity_error(subscription_repo, mock_db, sample_subscription):
+    """Test other integrity error handling."""
+    # Import inside test function
+    from src.exceptions import BaseAppException
+    
+    # Setup mock to raise a different kind of IntegrityError
+    other_error = Exception("Other constraint violation")
+    integrity_error = IntegrityError("statement", "params", other_error)
+    integrity_error.orig = other_error
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = integrity_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
+    
+    # Test that the correct exception is raised
+    with pytest.raises(BaseAppException) as exc_info:
+        await subscription_repo.create_subscription(sample_subscription)
+    
+    assert "Database integrity error" in str(exc_info.value)
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial subscription + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
 async def test_create_subscription_general_exception(subscription_repo, mock_db, sample_subscription):
@@ -117,13 +194,29 @@ async def test_create_subscription_general_exception(subscription_repo, mock_db,
     from src.exceptions import BaseAppException
     
     # Setup mock to raise a general exception
-    mock_db.commit.side_effect = Exception("Unexpected error")
+    general_error = Exception("Unexpected error")
+    
+    # Make the first transaction fail
+    first_context = AsyncMock()
+    first_context.__aenter__.return_value = None
+    first_context.__aexit__.side_effect = general_error
+    
+    # Make the second transaction (for failure event) succeed
+    second_context = AsyncMock()
+    second_context.__aenter__.return_value = None
+    second_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return different context managers on consecutive calls
+    mock_db.begin.side_effect = [first_context, second_context]
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
         await subscription_repo.create_subscription(sample_subscription)
     
     assert "Internal database error" in str(exc_info.value)
-    mock_db.add.assert_called_once()
-    mock_db.commit.assert_called_once()
-
+    
+    # Verify begin() was called twice (initial attempt + failure event)
+    assert mock_db.begin.call_count == 2
+    
+    # Verify add() was called twice (initial subscription + outbox) and once more for failure event
+    assert mock_db.add.call_count == 3
