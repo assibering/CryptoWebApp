@@ -67,12 +67,11 @@ async def test_get_subscription_success(
 @pytest.mark.asyncio
 async def test_create_subscription_success(
     mock_subscription_service,
-    sample_subscriptionresponse_active,
     sample_createsubscription
     ):
     """Test successful subscription creation."""
     # Setup mock to return a SubscriptionResponse
-    mock_subscription_service.create_subscription.return_value = sample_subscriptionresponse_active
+    mock_subscription_service.create_subscription_outbox.return_value = None
     
     # Override the dependency
     app.dependency_overrides[get_subscription_service] = lambda: mock_subscription_service
@@ -85,11 +84,7 @@ async def test_create_subscription_success(
     app.dependency_overrides.clear()
     
     # Verify the service method was called correctly
-    mock_subscription_service.create_subscription.assert_called_once_with(subscription_create=sample_createsubscription)
+    mock_subscription_service.create_subscription_outbox.assert_called_once_with(subscription_create=sample_createsubscription)
     
     # Assertions
     assert response.status_code == 201
-    subscription_data = response.json()
-    assert subscription_data["subscription_type"] == sample_subscriptionresponse_active.subscription_type
-    assert subscription_data["email"] == sample_subscriptionresponse_active.email
-    assert subscription_data["is_active"] == sample_subscriptionresponse_active.is_active
