@@ -1,43 +1,36 @@
-# syntax=docker/dockerfile:1.4
-
 ###########################################
 # BUILDER stage
 ###########################################
-FROM ghcr.io/astral-sh/uv:bookworm-slim as builder
-
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-ENV UV_PYTHON_INSTALL_DIR=/python
-ENV UV_PYTHON_PREFERENCE=only-managed
 
-RUN uv python install 3.12
+# Disable Python downloads, because we want to use the system interpreter
+# across both images. If using a managed Python version, it needs to be
+# copied from the build image into the final image; see `standalone.Dockerfile`
+# for an example.
+ENV UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
-
-# Install dependencies (only)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
-
-# Copy full app code
 ADD . /app
-
-# Install full project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 ###########################################
 # UNIT TEST stage
 ###########################################
-FROM debian:bookworm-slim as unit-test
-
-# Copy the Python version
-COPY --from=builder --chown=python:python /python /python
+FROM python:3.12-slim-bookworm AS unit-test
+# It is important to use the image that matches the builder, as the path to the
+# Python executable must be the same, e.g., using `python:3.11-slim-bookworm`
+# will fail.
 
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
 
-# Test-specific env
+# Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app"
 
@@ -47,10 +40,7 @@ CMD ["python", "-m", "pytest", "app/tests/unit"]
 ###########################################
 # INTEGRATION TEST stage
 ###########################################
-FROM debian:bookworm-slim as integration-test
-
-# Copy the Python version
-COPY --from=builder --chown=python:python /python /python
+FROM python:3.12-slim-bookworm AS integration-test
 
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
@@ -87,10 +77,7 @@ CMD ["/app/run_integration_tests.sh"]
 ###########################################
 # FULL TEST stage (unit + integration)
 ###########################################
-FROM debian:bookworm-slim as full-test
-
-# Copy the Python version
-COPY --from=builder --chown=python:python /python /python
+FROM python:3.12-slim-bookworm AS full-test
 
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
@@ -136,10 +123,7 @@ CMD ["/app/run_all_tests.sh"]
 ###########################################
 # PRODUCTION stage
 ###########################################
-FROM debian:bookworm-slim as production
-
-# Copy the Python version
-COPY --from=builder --chown=python:python /python /python
+FROM python:3.12-slim-bookworm AS production
 
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
