@@ -5,6 +5,8 @@ from .settings import get_settings, DatabaseType
 from botocore.config import Config
 from types_aiobotocore_dynamodb import DynamoDBClient
 from fastapi import Request
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+import aioboto3
 
 
 # Type for a dependency that yields a value
@@ -62,7 +64,6 @@ async def get_db_session_for_background():
     settings = get_settings()
     
     if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
-        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
         
         # Create engine and session factory
         engine = create_async_engine(settings.POSTGRES_DATABASE_URL)
@@ -77,7 +78,7 @@ async def get_db_session_for_background():
                 await session.rollback()
                 raise
     elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
-        import aioboto3
+        
         session = aioboto3.Session()
         
         async with session.client(
