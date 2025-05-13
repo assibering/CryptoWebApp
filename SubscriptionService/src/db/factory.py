@@ -11,7 +11,7 @@ def create_subscription_repository(db_context: Union[AsyncSession, DynamoDBClien
     """
     Creates the appropriate repository based on configuration.
     For PostgreSQL: Uses the provided database session
-    For DynamoDB: Ignores the database session parameter
+    For DynamoDB: Uses the provided database client
     """
     settings = get_settings()
     
