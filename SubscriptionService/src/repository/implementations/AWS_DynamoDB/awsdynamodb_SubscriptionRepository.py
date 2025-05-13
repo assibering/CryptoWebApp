@@ -13,7 +13,6 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
     def __init__(self, client: DynamoDBClient):
         """
         Initialize the DynamoDB repository.
-        The db parameter is ignored (it's only here to maintain a consistent interface with PostgreSQL repository).
         """
         # Initialize DynamoDB client
         self.client = client
