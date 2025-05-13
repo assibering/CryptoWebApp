@@ -34,12 +34,13 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY_FOR_TESTING: str = "default_secret"
     AWS_REGION_FOR_TESTING: str = "us-east-1"
     AWS_ENDPOINT_FOR_TESTING: str = "http://localstack:4566"
+    # --------------------------------------------------------------------
     
     model_config = SettingsConfigDict(
         env_file = ".env",
         case_sensitive = True
     )
-    # --------------------------------------------------------------------
+    
 
 
 @lru_cache()
