@@ -16,7 +16,7 @@ def get_db_context() -> ContextDependency:
     """
     Returns the appropriate database context dependency based on configuration.
     For PostgreSQL: Returns a dependency that yields a database session
-    For DynamoDB: Returns a dependency that yields a DynamoDB resource
+    For DynamoDB: Returns a dependency that yields a DynamoDB client
     """
     settings = get_settings()
     
