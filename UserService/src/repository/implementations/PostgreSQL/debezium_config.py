@@ -1,5 +1,3 @@
-from src.db.settings import get_settings
-
 async def generate_config_dict(settings):
     return {
         "name": "users-outbox-connector",
