@@ -1,11 +1,12 @@
 from src.repository.interfaces import interface_SubscriptionRepository
 from src.schemas import SubscriptionSchemas
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from src.repository.implementations.PostgreSQL.models.ORM_Subscription import SubscriptionORM, SubscriptionsOutboxORM
 from src.exceptions import ResourceNotFoundException, BaseAppException, ResourceAlreadyExistsException
 import logging
 from sqlalchemy.exc import IntegrityError
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,9 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
     
     async def create_subscription(
             self,
-            Subscription_instance: SubscriptionSchemas.Subscription
-        ) -> SubscriptionSchemas.Subscription:
+            Subscription_instance: SubscriptionSchemas.Subscription,
+            Outbox_instance: SubscriptionSchemas.Outbox
+        ) -> None:
         try:
             db_subscription = SubscriptionORM(
                 subscription_id=Subscription_instance.subscription_id,
@@ -50,10 +52,10 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             )
 
             outbox_event = SubscriptionsOutboxORM(
-                aggregatetype = "subscription", # -> TOPIC
-                aggregateid = Subscription_instance.email,
-                eventtype = "subscription_created_success",
-                payload = Subscription_instance.model_dump()
+                aggregatetype = Outbox_instance.aggregatetype,
+                aggregateid = Outbox_instance.aggregateid,
+                eventtype = f"{Outbox_instance.eventtype_prefix}_success",
+                payload = Outbox_instance.payload
             )
 
             # Start transaction
@@ -73,10 +75,12 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 logger.warning(f"Subscription with subscription_id {Subscription_instance.subscription_id} already exists")
 
                 fail_event = SubscriptionsOutboxORM(
-                    aggregatetype = "subscription",
-                    aggregateid = Subscription_instance.email,
-                    eventtype = "subscription_created_failed",
-                    payload = Subscription_instance.model_dump()
+                    aggregatetype = Outbox_instance.aggregatetype,
+                    aggregateid = Outbox_instance.aggregateid,
+                    eventtype = f"{Outbox_instance.eventtype_prefix}_failed",
+                    payload = Outbox_instance.payload.update({
+                        "exception": "ResourceAlreadyExistsException"
+                    })
                 )
 
                 async with self.db.begin():
@@ -88,10 +92,12 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
                 logger.exception(f"Error creating user: {str(e)}")
 
                 fail_event = SubscriptionsOutboxORM(
-                    aggregatetype = "subscription",
-                    aggregateid = Subscription_instance.email,
-                    eventtype = "subscription_created_failed",
-                    payload = Subscription_instance.model_dump()
+                    aggregatetype = Outbox_instance.aggregatetype,
+                    aggregateid = Outbox_instance.aggregateid,
+                    eventtype = f"{Outbox_instance.eventtype_prefix}_failed",
+                    payload = Outbox_instance.payload.update({
+                        "exception": "BaseAppException"
+                    })
                 )
 
                 async with self.db.begin():
@@ -106,82 +112,98 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
             logger.exception(f"Error creating subscription: {str(e)}")
 
             fail_event = SubscriptionsOutboxORM(
-                aggregatetype = "subscription",
-                aggregateid = Subscription_instance.email,
-                eventtype = "subscription_created_failed",
-                payload = Subscription_instance.model_dump()
+                aggregatetype = Outbox_instance.aggregatetype,
+                aggregateid = Outbox_instance.aggregateid,
+                eventtype = f"{Outbox_instance.eventtype_prefix}_failed",
+                payload = Outbox_instance.payload.update({
+                    "exception": "BaseAppException"
+                })
             )
 
             async with self.db.begin():
                 self.db.add(fail_event)
 
             raise BaseAppException(f"Internal database error: {str(e)}") from e
-        
+    
 
-    async def create_subscription_outbox(
+    async def delete_subscription(
             self,
-            CreateSubscription_instance: SubscriptionSchemas.CreateSubscription
+            subscription_id: str,
+            Outbox_instance: SubscriptionSchemas.Outbox
         ) -> None:
-        try:
-
-            outbox_event = SubscriptionsOutboxORM(
-                aggregatetype = "subscription", # -> TOPIC
-                aggregateid = CreateSubscription_instance.email,
-                eventtype = "subscription_initialised_success",
-                payload = CreateSubscription_instance.model_dump()
-            )
-
-            # Start transaction
-            async with self.db.begin():
-                self.db.add(outbox_event)
-            
-            return
+        """
+        Delete a subscription by subscription ID.
         
-        except IntegrityError as e:
-            if "UniqueViolationError" in str(e.orig):
-                logger.warning(f"Outbox event with id {outbox_event.id} already exists")
-
-                fail_event = SubscriptionsOutboxORM(
-                    aggregatetype = "subscription",
-                    aggregateid = CreateSubscription_instance.email,
-                    eventtype = "subscription_initialised_failed",
-                    payload = CreateSubscription_instance.model_dump()
-                )
-
-                async with self.db.begin():
-                    self.db.add(fail_event)
-
-                raise ResourceAlreadyExistsException(f"Outbox event with id {outbox_event.id} already exists")
-            else:
-                # Some other kind of IntegrityError (e.g., null value, foreign key constraint, etc)
-                logger.exception(f"Error creating outbox event: {str(e)}")
-
-                fail_event = SubscriptionsOutboxORM(
-                    aggregatetype = "subscription",
-                    aggregateid = CreateSubscription_instance.email,
-                    eventtype = "subscription_initialised_failed",
-                    payload = CreateSubscription_instance.model_dump()
-                )
-
-                async with self.db.begin():
-                    self.db.add(fail_event)
-
-                raise BaseAppException(f"Database integrity error: {str(e)}") from e
+        Args:
+            subscription_id: The subscription_id of the subscription to delete
             
-        except ResourceAlreadyExistsException:
-            raise
-
-        except Exception as e:
-            logger.exception(f"Error creating subscription: {str(e)}")
-
-            fail_event = SubscriptionsOutboxORM(
-                aggregatetype = "subscription",
-                aggregateid = CreateSubscription_instance.email,
-                eventtype = "subscription_initialised_failed",
-                payload = CreateSubscription_instance.model_dump()
+        Raises:
+            ResourceNotFoundException: If the subscription doesn't exist
+            BaseAppException: For any other errors
+        """
+        try:
+            # First check if the user exists
+            stmt = select(SubscriptionORM).where(SubscriptionORM.subscription_id == subscription_id)
+            result = await self.db.execute(stmt)
+            db_subscription = result.scalar_one_or_none()
+            
+            if not db_subscription:
+                logger.warning(f"Subscription with ID {subscription_id} not found for deletion")
+                
+                # Create a failed event
+                fail_event = SubscriptionsOutboxORM(
+                    aggregatetype = Outbox_instance.aggregatetype,
+                    aggregateid = Outbox_instance.aggregateid,
+                    eventtype = f"{Outbox_instance.eventtype_prefix}_failed",
+                    payload = Outbox_instance.payload.update({
+                        "exception": "ResourceNotFoundException"
+                    })
+                )
+                
+                async with self.db.begin():
+                    self.db.add(fail_event)
+                    
+                raise ResourceNotFoundException(f"Subscription with ID {subscription_id} not found for deletion")
+            
+            # Create a success event
+            success_event = SubscriptionsOutboxORM(
+                aggregatetype = Outbox_instance.aggregatetype,
+                aggregateid = Outbox_instance.aggregateid,
+                eventtype = f"{Outbox_instance.eventtype_prefix}_success",
+                payload = Outbox_instance.payload
             )
-
+            
+            # Start transaction for deletion and event
             async with self.db.begin():
-                self.db.add(fail_event)
-
-            raise BaseAppException(f"Internal database error: {str(e)}") from e
+                # Delete the user
+                delete_stmt = delete(SubscriptionORM).where(SubscriptionORM.subscription_id == subscription_id)
+                await self.db.execute(delete_stmt)
+                
+                # Add the outbox event
+                self.db.add(success_event)
+                
+            logger.info(f"Subscription with ID {subscription_id} deleted successfully")
+                
+        except ResourceNotFoundException:
+            raise
+            
+        except Exception as e:
+            logger.exception(f"Error deleting user: {str(e)}")
+            
+            # Create a failed event
+            fail_event = SubscriptionsOutboxORM(
+                aggregatetype = Outbox_instance.aggregatetype,
+                aggregateid = Outbox_instance.aggregateid,
+                eventtype = f"{Outbox_instance.eventtype_prefix}_failed",
+                payload = Outbox_instance.payload.update({
+                    "exception": "BaseAppException"
+                })
+            )
+            
+            try:
+                async with self.db.begin():
+                    self.db.add(fail_event)
+            except Exception as outbox_error:
+                logger.exception(f"Error creating outbox event: {str(outbox_error)}")
+                
+            raise BaseAppException(f"Error deleting user: {str(e)}") from e

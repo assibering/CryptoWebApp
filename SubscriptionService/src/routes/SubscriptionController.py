@@ -17,4 +17,4 @@ async def get_subscription(
 async def create_subscription(
     subscription_create: SubscriptionSchemas.CreateSubscription,
     subscription_service: SubscriptionService = Depends(get_subscription_service)):
-    return await subscription_service.create_subscription_outbox(subscription_create=subscription_create)
+    return await subscription_service.create_subscription(CreateSubscription_instance=subscription_create)

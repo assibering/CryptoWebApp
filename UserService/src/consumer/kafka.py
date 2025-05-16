@@ -8,6 +8,7 @@ from src.exceptions import ResourceAlreadyExistsException, BaseAppException, Res
 from src.db.db_context import get_db_session_for_background
 from src.db.factory import create_user_repository
 from src.service.UserService import UserService
+from src.schemas import UserSchemas
 
 
 # Configure logging
@@ -30,47 +31,30 @@ class EventHandler:
         raise NotImplementedError("Subclasses must implement handle method")
 
 
-class SubscriptionInitiatedSuccessHandler(EventHandler):
+class SubscriptionCreatedSuccessHandler(EventHandler):
     async def handle(
             self,
             payload: Dict[str, Any]
         ) -> None:
-        logger.info(f"Processing subscription_initialised_success event: {payload}")
+        logger.info(f"Processing subscription_created_success event: {payload}")
         # Implement your create subscription logic here
         try:
             async for db_session in get_db_session_for_background():
                 user_repository = create_user_repository(db_session)
                 user_service = UserService(user_repository)
                 
-                await user_service.create_user(email=payload.get("email"))
+                email = payload.pop("email") # payload no longer contains email
+
+                await user_service.create_user(
+                    User_instance=UserSchemas.User(
+                        email=email
+                    ),
+                    payload_add=payload
+                )
+
                 # No need to close the session - it's handled by the generator
 
         except ResourceAlreadyExistsException:
-            raise
-        except Exception as e:
-            logger.exception(f"Error creating user: {str(e)}")
-            raise BaseAppException(f"Error creating user: {str(e)}") from e
-        
-class SubscriptionCreatedSuccessHandler(EventHandler):
-    async def handle(self, payload: Dict[str, Any]) -> None:
-        logger.info(f"Processing subscription_created_success event: {payload}")
-        # Implement your user update logic here
-        # Do nothing
-
-class SubscriptionCreatedFailedHandler(EventHandler):
-    async def handle(self, payload: Dict[str, Any]) -> None:
-        logger.info(f"Processing subscription_created_failed event: {payload}")
-        # Implement your user update logic here
-        # Delete the previously created user
-        try:
-            async for db_session in get_db_session_for_background():
-                user_repository = create_user_repository(db_session)
-                user_service = UserService(user_repository)
-                
-                await user_service.delete_user(email=payload.get("email"))
-                # No need to close the session - it's handled by the generator
-
-        except ResourceNotFoundException:
             raise
         except Exception as e:
             logger.exception(f"Error creating user: {str(e)}")
@@ -181,9 +165,7 @@ event_manager = KafkaEventManager()
 async def setup_kafka_handlers():
     """Initialize and start Kafka event handlers"""
     # Register event handlers
-    event_manager.register_handler("subscription_initialised_success", SubscriptionInitiatedSuccessHandler())
     event_manager.register_handler("subscription_created_success", SubscriptionCreatedSuccessHandler())
-    event_manager.register_handler("subscription_created_failed", SubscriptionCreatedFailedHandler())
     
     # Start the Kafka consumer
     await event_manager.start(
