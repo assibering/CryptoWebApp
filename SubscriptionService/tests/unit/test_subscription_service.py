@@ -86,22 +86,33 @@ async def test_create_subscription_success(
     sample_createsubscription
     ):
     """Test successful subscription creation."""
+    from src.schemas import SubscriptionSchemas
 
     # Setup mock for saltAndHashedPW
     mock_uuid.return_value = "1_unique_id"
 
-    # Setup mock to return a Subscription
-    subscription_service.subscription_repository.create_subscription = AsyncMock(return_value=sample_subscription_active)
-
     # Call the method - return SubscriptionResponse
-    subscription = await subscription_service.create_subscription(subscription_create=sample_createsubscription)
+    subscription = await subscription_service.create_subscription(
+        CreateSubscription_instance=sample_createsubscription,
+        eventtype_prefix="subscription_created"
+    )
 
     # Verify the repository method was called correctly
     subscription_service.subscription_repository.create_subscription.assert_called_once_with(
-        Subscription_instance=sample_subscription_active
+        Subscription_instance = sample_subscription_active,
+        Outbox_instance = SubscriptionSchemas.Outbox(
+            aggregatetype = "subscription",
+            aggregateid = "1_unique_id",
+            eventtype_prefix = "subscription_created",
+            payload = {
+                "subscription_id": "1_unique_id",
+                "email": sample_subscription_active.email
+            }
+        )
     )
     
     # Assertions
-    assert subscription.subscription_type == sample_subscription_active.subscription_type
-    assert subscription.email == sample_subscription_active.email
-    assert subscription.is_active == True
+    assert subscription.subscription_id == sample_subscription_active.subscription_id
+    assert subscription.subscription_type == None
+    assert subscription.email == None
+    assert subscription.is_active == None

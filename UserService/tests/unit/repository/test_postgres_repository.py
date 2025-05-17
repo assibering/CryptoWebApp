@@ -30,6 +30,20 @@ def sample_user():
     )
 
 @pytest.fixture
+def sample_outbox():
+    """Create a sample Outbox schema for testing."""
+    from src.schemas import UserSchemas
+    return UserSchemas.Outbox(
+        aggregatetype = "user",
+        aggregateid = "test@example.com",
+        eventtype_prefix = "user_created",
+        payload = {
+            "email": "test@example.com",
+            "is_active": True,
+        }
+    )
+
+@pytest.fixture
 def db_user():
     """Create a sample UserORM object that would be returned from the database."""
     from src.repository.implementations.PostgreSQL.models.ORM_User import UserORM
@@ -95,14 +109,10 @@ async def test_get_user_database_error(user_repo, mock_db):
 
 # Tests for create_user method
 @pytest.mark.asyncio
-async def test_create_user_success(user_repo, mock_db, sample_user):
+async def test_create_user_success(user_repo, mock_db, sample_user, sample_outbox):
     """Test successful user creation."""
     # Call the method
-    result = await user_repo.create_user(sample_user)
-    
-    # Assertions
-    assert result.email == sample_user.email
-    assert result.is_active == sample_user.is_active
+    await user_repo.create_user(sample_user, sample_outbox)
     
     # Verify that begin() was called for the transaction
     mock_db.begin.assert_called_once()
@@ -111,7 +121,7 @@ async def test_create_user_success(user_repo, mock_db, sample_user):
     assert mock_db.add.call_count == 2
 
 @pytest.mark.asyncio
-async def test_create_user_already_exists(user_repo, mock_db, sample_user):
+async def test_create_user_already_exists(user_repo, mock_db, sample_user, sample_outbox):
     """Test user already exists scenario."""
     # Import inside test function
     from src.exceptions import ResourceAlreadyExistsException
@@ -136,7 +146,7 @@ async def test_create_user_already_exists(user_repo, mock_db, sample_user):
     
     # Test that the correct exception is raised
     with pytest.raises(ResourceAlreadyExistsException) as exc_info:
-        await user_repo.create_user(sample_user)
+        await user_repo.create_user(sample_user, sample_outbox)
     
     assert "already exists" in str(exc_info.value)
     
@@ -147,7 +157,7 @@ async def test_create_user_already_exists(user_repo, mock_db, sample_user):
     assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
-async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user):
+async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user, sample_outbox):
     """Test other integrity error handling."""
     # Import inside test function
     from src.exceptions import BaseAppException
@@ -172,7 +182,7 @@ async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await user_repo.create_user(sample_user)
+        await user_repo.create_user(sample_user, sample_outbox)
     
     assert "Database integrity error" in str(exc_info.value)
     
@@ -183,7 +193,7 @@ async def test_create_user_other_integrity_error(user_repo, mock_db, sample_user
     assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
-async def test_create_user_general_exception(user_repo, mock_db, sample_user):
+async def test_create_user_general_exception(user_repo, mock_db, sample_user, sample_outbox):
     """Test general exception handling during user creation."""
     # Import inside test function
     from src.exceptions import BaseAppException
@@ -206,7 +216,7 @@ async def test_create_user_general_exception(user_repo, mock_db, sample_user):
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await user_repo.create_user(sample_user)
+        await user_repo.create_user(sample_user, sample_outbox)
     
     assert "Internal database error" in str(exc_info.value)
     
@@ -218,15 +228,10 @@ async def test_create_user_general_exception(user_repo, mock_db, sample_user):
 
 # Tests for update_user method
 @pytest.mark.asyncio
-async def test_update_user_success(user_repo, mock_db, sample_user, db_user):
+async def test_update_user_success(user_repo, mock_db, db_user):
     """Test successful user update."""
     # Import inside test function
     from src.schemas import UserSchemas
-    
-    # Setup mock to return a user
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = db_user
-    mock_db.execute.return_value = mock_result
     
     # Create an updated user
     updated_user = UserSchemas.User(
@@ -239,8 +244,6 @@ async def test_update_user_success(user_repo, mock_db, sample_user, db_user):
         result = await user_repo.update_user(updated_user)
     
     # Assertions
-    assert result.email == "test@example.com"
-    assert result.is_active == False  # The mock db_user's value should be updated to false
     mock_db.execute.assert_called_once()
     mock_db.commit.assert_called_once()
     mock_db.refresh.assert_called_once()

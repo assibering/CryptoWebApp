@@ -30,6 +30,7 @@ class SubscriptionService:
     async def create_subscription(
             self,
             CreateSubscription_instance: SubscriptionSchemas.CreateSubscription,
+            eventtype_prefix: str,
             payload_add: Dict[str, Any] = None
         ) -> SubscriptionSchemas.SubscriptionResponse:
         subscription_id = generate_unique_id()
@@ -47,7 +48,7 @@ class SubscriptionService:
                 Outbox_instance = SubscriptionSchemas.Outbox(
                     aggregatetype = "subscription",
                     aggregateid = subscription_id,
-                    eventtype_prefix = "subscription_created",
+                    eventtype_prefix = eventtype_prefix,
                     payload = {
                         "subscription_id": subscription_id,
                         "email": CreateSubscription_instance.email,

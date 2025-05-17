@@ -28,6 +28,7 @@ class UserService:
     async def create_user(
             self,
             User_instance: UserSchemas.User,
+            eventtype_prefix: str,
             payload_add: Dict[str, Any] = None
         ) -> None:
         try:
@@ -40,7 +41,7 @@ class UserService:
                 Outbox_instance = UserSchemas.Outbox(
                     aggregatetype = "user",
                     aggregateid = User_instance.email,
-                    eventtype_prefix = "user_created_from_new_subscription",
+                    eventtype_prefix = eventtype_prefix,
                     payload = {
                         "email": User_instance.email,
                         "is_active": True if User_instance.is_active else False,

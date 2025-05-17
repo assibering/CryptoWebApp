@@ -49,6 +49,7 @@ class SubscriptionCreatedSuccessHandler(EventHandler):
                     User_instance=UserSchemas.User(
                         email=email
                     ),
+                    eventtype_prefix="user_created_from_new_subscription",
                     payload_add=payload
                 )
 

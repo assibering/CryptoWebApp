@@ -31,6 +31,20 @@ def sample_subscription():
     )
 
 @pytest.fixture
+def sample_outbox():
+    """Create a sample Outbox schema for testing."""
+    from src.schemas import SubscriptionSchemas
+    return SubscriptionSchemas.Outbox(
+        aggregatetype = "subscription",
+        aggregateid = "1_unique_id",
+        eventtype_prefix = "subscription_created",
+        payload = {
+            "subscription_id": "1_unique_id",
+            "email": "test@example.com",
+        }
+    )
+
+@pytest.fixture
 def db_subscription():
     """Create a sample SubscriptionORM object that would be returned from the database."""
     from src.repository.implementations.PostgreSQL.models.ORM_Subscription import SubscriptionORM
@@ -99,15 +113,10 @@ async def test_get_subscription_database_error(subscription_repo, mock_db):
 
 # Tests for create_subscription method
 @pytest.mark.asyncio
-async def test_create_subscription_success(subscription_repo, mock_db, sample_subscription):
+async def test_create_subscription_success(subscription_repo, mock_db, sample_subscription, sample_outbox):
     """Test successful subscription creation."""
     # Call the method
-    result = await subscription_repo.create_subscription(sample_subscription)
-    
-    # Assertions
-    assert result.subscription_type == sample_subscription.subscription_type 
-    assert result.email == sample_subscription.email
-    assert result.is_active == True
+    await subscription_repo.create_subscription(sample_subscription, sample_outbox)
     
     # Verify that begin() was called for the transaction
     mock_db.begin.assert_called_once()
@@ -116,7 +125,7 @@ async def test_create_subscription_success(subscription_repo, mock_db, sample_su
     assert mock_db.add.call_count == 2
 
 @pytest.mark.asyncio
-async def test_create_subscription_already_exists(subscription_repo, mock_db, sample_subscription):
+async def test_create_subscription_already_exists(subscription_repo, mock_db, sample_subscription, sample_outbox):
     """Test subscription already exists scenario."""
     # Import inside test function
     from src.exceptions import ResourceAlreadyExistsException
@@ -141,7 +150,7 @@ async def test_create_subscription_already_exists(subscription_repo, mock_db, sa
     
     # Test that the correct exception is raised
     with pytest.raises(ResourceAlreadyExistsException) as exc_info:
-        await subscription_repo.create_subscription(sample_subscription)
+        await subscription_repo.create_subscription(sample_subscription, sample_outbox)
     
     assert "already exists" in str(exc_info.value)
     
@@ -152,7 +161,7 @@ async def test_create_subscription_already_exists(subscription_repo, mock_db, sa
     assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
-async def test_create_subscription_other_integrity_error(subscription_repo, mock_db, sample_subscription):
+async def test_create_subscription_other_integrity_error(subscription_repo, mock_db, sample_subscription, sample_outbox):
     """Test other integrity error handling."""
     # Import inside test function
     from src.exceptions import BaseAppException
@@ -177,7 +186,7 @@ async def test_create_subscription_other_integrity_error(subscription_repo, mock
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await subscription_repo.create_subscription(sample_subscription)
+        await subscription_repo.create_subscription(sample_subscription, sample_outbox)
     
     assert "Database integrity error" in str(exc_info.value)
     
@@ -188,7 +197,7 @@ async def test_create_subscription_other_integrity_error(subscription_repo, mock
     assert mock_db.add.call_count == 3
 
 @pytest.mark.asyncio
-async def test_create_subscription_general_exception(subscription_repo, mock_db, sample_subscription):
+async def test_create_subscription_general_exception(subscription_repo, mock_db, sample_subscription, sample_outbox):
     """Test general exception handling during subscription creation."""
     # Import inside test function
     from src.exceptions import BaseAppException
@@ -211,7 +220,7 @@ async def test_create_subscription_general_exception(subscription_repo, mock_db,
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await subscription_repo.create_subscription(sample_subscription)
+        await subscription_repo.create_subscription(sample_subscription, sample_outbox)
     
     assert "Internal database error" in str(exc_info.value)
     
