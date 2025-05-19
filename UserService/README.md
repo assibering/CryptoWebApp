@@ -15,4 +15,4 @@ PostgreSQL will automatically create the necessary tables on startup—no manual
 
 > **Tip:** Always verify your `.env` configuration matches your intended database before starting the service.
 
-![Solution Design](images/SAGA.png)
+![Solution Design](images/Pubsub.png)

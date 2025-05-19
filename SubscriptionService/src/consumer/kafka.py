@@ -5,7 +5,7 @@ from src.logging_config import setup_logging
 from typing import Dict, List, Any
 from aiokafka import AIOKafkaConsumer
 from src.service.SubscriptionService import SubscriptionService
-from src.exceptions import ResourceAlreadyExistsException, BaseAppException
+from src.exceptions import ResourceNotFoundException, BaseAppException
 from src.db.db_context import get_db_session_for_background
 from src.db.factory import create_subscription_repository
 
@@ -28,40 +28,36 @@ class EventHandler:
     async def handle(self, payload: Dict[str, Any]) -> None:
         """Handle the event payload"""
         raise NotImplementedError("Subclasses must implement handle method")
+        
 
+class UserCreatedFailedHandler(EventHandler):
+    async def handle(self, payload: Dict[str, Any]) -> None:
+        logger.info(f"Processing user_created_from_new_subscription_failed: {payload}")
 
-class UserCreatedSuccessHandler(EventHandler):
-    async def handle(
-            self,
-            payload: Dict[str, Any]
-        ) -> None:
-
-        from src.schemas import SubscriptionSchemas
-        logger.info(f"Processing user_created_success event: {payload}")
-        # Implement your create subscription logic here
+        # Do nothing if user already exists
+        exception = payload.get("exception")
+        if exception == "ResourceAlreadyExistsException":
+            logger.info(f"Failed due to: ResourceAlreadyExistsException")
+            return
+        
+        # Delete the previously created subscription
         try:
             async for db_session in get_db_session_for_background():
                 subscription_repository = create_subscription_repository(db_session)
                 subscription_service = SubscriptionService(subscription_repository)
                 
-                await subscription_service.create_subscription(
-                subscription_create = SubscriptionSchemas.CreateSubscription(
-                    subscription_type = payload.get("subscription_type", "free_tier"),
-                    email = payload.get("email")
-                )
-            )
+                await subscription_service.delete_subscription(subscription_id=payload.get("subscription_id"))
+                # No need to close the session - it's handled by the generator
 
-        except ResourceAlreadyExistsException:
+        except ResourceNotFoundException:
             raise
         except Exception as e:
-            logger.exception(f"Error creating subscription: {str(e)}")
-            raise BaseAppException(f"Error creating subscription: {str(e)}") from e
-        
+            logger.exception(f"Error deleting subscription: {str(e)}")
+            raise BaseAppException(f"Error deleting subscription: {str(e)}") from e
 
-class UserCreatedFailedHandler(EventHandler):
+class UserCreatedSuccessHandler(EventHandler):
     async def handle(self, payload: Dict[str, Any]) -> None:
-        logger.info(f"Processing user_created_failed event: {payload}")
-        # Implement your user update logic here
+        logger.info(f"Processing user_created_from_new_subscription_succes: {payload}")
 
 class KafkaEventManager:
     """Manages Kafka event consumption and routing to appropriate handlers"""
@@ -168,8 +164,9 @@ event_manager = KafkaEventManager()
 async def setup_kafka_handlers():
     """Initialize and start Kafka event handlers"""
     # Register event handlers
-    event_manager.register_handler("user_created_success", UserCreatedSuccessHandler())
-    event_manager.register_handler("user_created_failed", UserCreatedFailedHandler())
+    event_manager.register_handler("user_created_from_new_subscription_failed", UserCreatedFailedHandler())
+    event_manager.register_handler("user_created_from_new_subscription_success", UserCreatedSuccessHandler())
+    
     
     # Start the Kafka consumer
     await event_manager.start(

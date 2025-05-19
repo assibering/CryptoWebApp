@@ -132,22 +132,29 @@ async def test_create_user_success(
     """Test successful user creation."""
     from src.schemas import UserSchemas
 
-    # Setup mock to return a User
-    user_service.user_repository.create_user = AsyncMock(return_value=sample_user_inactive_nopw)
-
-    # Call the method - return UserResponse
-    user = await user_service.create_user(email=sample_user_inactive_nopw.email)
+    # Call the method
+    await user_service.create_user(
+        User_instance=UserSchemas.User(
+            email = sample_user_inactive_nopw.email
+        ),
+        eventtype_prefix = "user_created"
+    )
 
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
         User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
+        ),
+        Outbox_instance = UserSchemas.Outbox(
+            aggregatetype = "user",
+            aggregateid = sample_user_inactive_nopw.email,
+            eventtype_prefix = "user_created",
+            payload = {
+                "email": sample_user_inactive_nopw.email,
+                "is_active": True if sample_user_inactive_nopw.is_active else False
+            }
         )
     )
-    
-    # Assertions
-    assert user.email == sample_user_inactive_nopw.email
-    assert user.is_active is False
 
 @pytest.mark.asyncio
 async def test_create_user_already_exists(user_service, sample_user_inactive_nopw):
@@ -163,12 +170,27 @@ async def test_create_user_already_exists(user_service, sample_user_inactive_nop
 
     # Test that the correct exception is raised
     with pytest.raises(ResourceAlreadyExistsException) as exc_info:
-        await user_service.create_user(email=sample_user_inactive_nopw.email)
+        # Call the method
+        await user_service.create_user(
+            User_instance=UserSchemas.User(
+                email = sample_user_inactive_nopw.email
+            ),
+            eventtype_prefix = "user_created"
+        )
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
         User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
+        ),
+        Outbox_instance = UserSchemas.Outbox(
+            aggregatetype = "user",
+            aggregateid = sample_user_inactive_nopw.email,
+            eventtype_prefix = "user_created",
+            payload = {
+                "email": sample_user_inactive_nopw.email,
+                "is_active": True if sample_user_inactive_nopw.is_active else False
+            }
         )
     )
     
@@ -188,12 +210,27 @@ async def test_create_user_other_integrity_error(user_service, sample_user_inact
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await user_service.create_user(email=sample_user_inactive_nopw.email)
+        # Call the method
+        await user_service.create_user(
+            User_instance=UserSchemas.User(
+                email = sample_user_inactive_nopw.email
+            ),
+            eventtype_prefix = "user_created"
+        )
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
         User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
+        ),
+        Outbox_instance = UserSchemas.Outbox(
+            aggregatetype = "user",
+            aggregateid = sample_user_inactive_nopw.email,
+            eventtype_prefix = "user_created",
+            payload = {
+                "email": sample_user_inactive_nopw.email,
+                "is_active": True if sample_user_inactive_nopw.is_active else False
+            }
         )
     )
     
@@ -214,12 +251,27 @@ async def test_create_user_general_exception(user_service, sample_user_inactive_
     
     # Test that the correct exception is raised
     with pytest.raises(BaseAppException) as exc_info:
-        await user_service.create_user(email=sample_user_inactive_nopw.email)
+        # Call the method
+        await user_service.create_user(
+            User_instance=UserSchemas.User(
+                email = sample_user_inactive_nopw.email
+            ),
+            eventtype_prefix = "user_created"
+        )
     
     # Verify the repository method was called correctly
     user_service.user_repository.create_user.assert_called_once_with(
         User_instance=UserSchemas.User(
             email=sample_user_inactive_nopw.email
+        ),
+        Outbox_instance = UserSchemas.Outbox(
+            aggregatetype = "user",
+            aggregateid = sample_user_inactive_nopw.email,
+            eventtype_prefix = "user_created",
+            payload = {
+                "email": sample_user_inactive_nopw.email,
+                "is_active": True if sample_user_inactive_nopw.is_active else False
+            }
         )
     )
     
@@ -240,19 +292,12 @@ async def test_password_reset_success(
     """Test successful password update."""
     # Setup mock for saltAndHashedPW
     mock_saltAndHashedPW.return_value = "hashed_password_value"
-
-    # Setup mock to return a User
-    user_service.user_repository.update_user = AsyncMock(return_value=sample_user_active_nopw)
     
-    # Call the method - return UserResponse
-    user = await user_service.reset_password(sample_user_active_nopw.email, sample_reset_password)
+    # Call the method
+    await user_service.reset_password(sample_user_active_nopw.email, sample_reset_password)
 
     # Verify the repository method was called correctly
     user_service.user_repository.update_user.assert_called_once_with(sample_user_active_pw)
-    
-    # Assertions
-    assert user.email == sample_user_active_nopw.email
-    assert user.is_active is True
 
 @pytest.mark.asyncio
 @patch("src.service.UserService.saltAndHashedPW")

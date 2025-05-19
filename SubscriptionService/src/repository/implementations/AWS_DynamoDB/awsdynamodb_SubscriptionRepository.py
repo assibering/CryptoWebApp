@@ -53,8 +53,9 @@ class SubscriptionRepository(interface_SubscriptionRepository.SubscriptionReposi
 
     async def create_subscription(
             self,
-            Subscription_instance: SubscriptionSchemas.Subscription
-        ) -> SubscriptionSchemas.Subscription:
+            Subscription_instance: SubscriptionSchemas.Subscription,
+            Outbox_instance: SubscriptionSchemas.Outbox
+        ) -> None:
         '''
         This function inserts a User instance into the database.
         This function will not overwrite if the user already exists.

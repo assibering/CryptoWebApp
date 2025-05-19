@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 from typing_extensions import Self
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class ResetPassword(BaseModel):
     password: str
@@ -19,4 +19,10 @@ class User(BaseModel):
 
 class UserResponse(BaseModel):
     email: str
-    is_active: bool
+    is_active: Optional[bool] = None
+
+class Outbox(BaseModel):
+    aggregatetype: str
+    aggregateid: str
+    eventtype_prefix: str
+    payload: Dict[str, Any]
