@@ -111,6 +111,14 @@ async def test_get_user_database_error(user_repo, mock_db):
 @pytest.mark.asyncio
 async def test_create_user_success(user_repo, mock_db, sample_user, sample_outbox):
     """Test successful user creation."""
+    # Create a mock transaction context
+    transaction_context = AsyncMock()
+    transaction_context.__aenter__.return_value = None
+    transaction_context.__aexit__.return_value = None
+    
+    # Configure mock_db.begin() to return the transaction context
+    mock_db.begin.return_value = transaction_context
+    
     # Call the method
     await user_repo.create_user(sample_user, sample_outbox)
     
@@ -229,9 +237,12 @@ async def test_create_user_general_exception(user_repo, mock_db, sample_user, sa
 # Tests for update_user method
 @pytest.mark.asyncio
 async def test_update_user_success(user_repo, mock_db, db_user):
-    """Test successful user update."""
-    # Import inside test function
     from src.schemas import UserSchemas
+    
+    # Configure the mock with MagicMock instead of AsyncMock
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = db_user
+    mock_db.execute.return_value = mock_result
     
     # Create an updated user
     updated_user = UserSchemas.User(
@@ -239,14 +250,13 @@ async def test_update_user_success(user_repo, mock_db, db_user):
         is_active=False
     )
     
-    # Mock the dict method to return the fields to update
-    with patch.object(UserSchemas.User, 'dict', return_value={"is_active": False}):
-        result = await user_repo.update_user(updated_user)
+    # Patch the model_dump method instead of dict
+    with patch.object(UserSchemas.User, 'model_dump', return_value={"is_active": False}):
+        # Call the method
+        await user_repo.update_user(updated_user)
     
-    # Assertions
-    mock_db.execute.assert_called_once()
-    mock_db.commit.assert_called_once()
-    mock_db.refresh.assert_called_once()
+    # Verify the user was updated correctly
+    assert db_user.is_active is False
 
 @pytest.mark.asyncio
 async def test_update_user_not_found(user_repo, mock_db, sample_user):

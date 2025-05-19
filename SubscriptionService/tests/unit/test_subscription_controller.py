@@ -83,7 +83,7 @@ async def test_create_subscription_success(
     ):
     """Test successful subscription creation."""
     # Setup mock to return a SubscriptionResponse
-    mock_subscription_service.create_subscription_outbox.return_value = sample_subscriptionresponse_after_creation
+    mock_subscription_service.create_subscription.return_value = sample_subscriptionresponse_after_creation
     
     # Override the dependency
     app.dependency_overrides[get_subscription_service] = lambda: mock_subscription_service
@@ -96,7 +96,7 @@ async def test_create_subscription_success(
     app.dependency_overrides.clear()
     
     # Verify the service method was called correctly
-    mock_subscription_service.create_subscription_outbox.assert_called_once_with(
+    mock_subscription_service.create_subscription.assert_called_once_with(
         CreateSubscription_instance=sample_createsubscription,
         eventtype_prefix="subscription_created"
     )
