@@ -5,7 +5,7 @@ FROM postgres:17 AS builder
 
 # Install required packages, including libcurl for pgsql-http
 RUN apt-get update && apt-get install -y \
-    postgresql-contrib \
+    postgresql-contrib-17 \
     postgresql-server-dev-17 \
     build-essential \
     git \
@@ -38,6 +38,7 @@ RUN mkdir -p /opt/sql/functions /opt/sql/schedules && \
 # In this case we execute init_db.sql first and then we execute setup.sql
 COPY --chown=postgres:postgres init_db.sql /docker-entrypoint-initdb.d/00_init_db.sql
 COPY --chown=postgres:postgres setup_no_crypto.sql /docker-entrypoint-initdb.d/01_setup_no_crypto.sql
+COPY --chown=postgres:postgres init_roles.sql /opt/sql/
 COPY --chown=postgres:postgres init_tables_auth.sql /opt/sql/
 COPY --chown=postgres:postgres authorised_services.sql /opt/sql/
 COPY --chown=postgres:postgres functions/ /opt/sql/functions/
@@ -83,6 +84,7 @@ RUN mkdir -p /opt/sql/functions /opt/sql/schedules && \
 # In this case we execute init_db.sql first and then we execute setup.sql
 COPY --chown=postgres:postgres init_db.sql /docker-entrypoint-initdb.d/00_init_db.sql
 COPY --chown=postgres:postgres setup.sql /docker-entrypoint-initdb.d/01_setup.sql
+COPY --chown=postgres:postgres init_roles.sql /opt/sql/
 COPY --chown=postgres:postgres init_tables.sql /opt/sql/
 COPY --chown=postgres:postgres authorised_services.sql /opt/sql/
 COPY --chown=postgres:postgres functions/ /opt/sql/functions/

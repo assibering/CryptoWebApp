@@ -20,7 +20,8 @@ dependencies = [
     "aioboto3>=14.1.0",
     "types-aiobotocore-dynamodb>=2.21.1",
     "uuid6>=2024.7.10",
-    "aiokafka>=0.12.0"
+    "aiokafka>=0.12.0",
+    "stripe>=14.4.1"
 ]
 
 [tool.pytest.ini_options]

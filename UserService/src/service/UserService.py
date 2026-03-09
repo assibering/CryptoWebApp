@@ -89,9 +89,9 @@ class UserService:
                     is_active=False
                 )
             )
+            
             return UserSchemas.UserResponse(
-                email=user.email,
-                is_active=user.is_active
+                email=email
             )
         except ResourceNotFoundException:
             raise
