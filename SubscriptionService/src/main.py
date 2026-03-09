@@ -7,7 +7,7 @@ from src.logging_config import setup_logging
 from fastapi.responses import JSONResponse
 from src.middleware.correlation_id_middleware import CorrelationIdMiddleware
 from contextlib import asynccontextmanager
-from src.db.settings import get_settings, DatabaseType
+from src.config import get_settings, DatabaseType
 import aioboto3
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 import httpx

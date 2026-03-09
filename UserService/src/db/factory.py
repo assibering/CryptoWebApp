@@ -4,7 +4,7 @@ from types_aiobotocore_dynamodb import DynamoDBClient
 from src.repository.interfaces.interface_UserRepository import UserRepository as UserRepositoryInterface
 from src.repository.implementations.PostgreSQL.postgres_UserRepository import UserRepository as PostgresUserRepository
 from src.repository.implementations.AWS_DynamoDB.awsdynamodb_UserRepository import UserRepository as DynamoUserRepository
-from .settings import get_settings, DatabaseType
+from src.config import get_settings, DatabaseType
 from typing import Union
 
 def create_user_repository(db_context: Union[AsyncSession, DynamoDBClient]) -> UserRepositoryInterface:

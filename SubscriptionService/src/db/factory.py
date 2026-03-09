@@ -4,7 +4,7 @@ from types_aiobotocore_dynamodb import DynamoDBClient
 from src.repository.interfaces.interface_SubscriptionRepository import SubscriptionRepository as SubscriptionRepositoryInterface
 from src.repository.implementations.PostgreSQL.postgres_SubscriptionRepository import SubscriptionRepository as PostgresSubscriptionRepository
 from src.repository.implementations.AWS_DynamoDB.awsdynamodb_SubscriptionRepository import SubscriptionRepository as DynamoSubscriptionRepository
-from .settings import get_settings, DatabaseType
+from src.config import get_settings, DatabaseType
 from typing import Union
 
 def create_subscription_repository(db_context: Union[AsyncSession, DynamoDBClient]) -> SubscriptionRepositoryInterface:

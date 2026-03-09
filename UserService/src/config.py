@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Debezium settings (only related to postgres)
     DB_HOST: str = "postgresql"
     DB_PORT: str = "5432"
-    DB_USER: str = "subscription_service_user"
+    DB_USER: str = "user_service_user"
     DB_PASSWORD: str = "super_secure_password"
     DB_NAME: str = "crypto_db"
     DEBEZIUM_URL: str = "http://debezium:8083/connectors"
@@ -40,6 +40,7 @@ class Settings(BaseSettings):
         env_file = ".env",
         case_sensitive = True
     )
+    
 
 
 @lru_cache()

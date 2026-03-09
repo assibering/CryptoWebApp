@@ -1,7 +1,7 @@
 # src/db/context.py
 from typing import Callable, AsyncGenerator, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from .settings import get_settings, DatabaseType
+from src.config import get_settings, DatabaseType
 from botocore.config import Config
 from types_aiobotocore_dynamodb import DynamoDBClient
 from fastapi import Request
