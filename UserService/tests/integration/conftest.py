@@ -9,23 +9,24 @@ import aioboto3
 from src.repository.implementations.PostgreSQL.models.ORM_User import Base
 from src.db.db_context import db_context
 from src.main import app
-from src.db.settings import get_settings, DatabaseType
+from src.config import get_settings, DatabaseType
 
 
 # Load settings
 settings = get_settings()
 
+
 # Define override_db_context at module level - will be set properly later
 async def override_db_context():
     yield None
 
-if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
 
-    test_engine = create_async_engine(settings.POSTGRES_DATABASE_URL_FOR_TESTING, echo=True)
+if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
+    test_engine = create_async_engine(
+        settings.POSTGRES_DATABASE_URL_FOR_TESTING, echo=True
+    )
     TestAsyncSessionLocal = async_sessionmaker(
-        bind=test_engine,
-        expire_on_commit=False,
-        class_=AsyncSession
+        bind=test_engine, expire_on_commit=False, class_=AsyncSession
     )
 
     @pytest.fixture(scope="session")
@@ -38,16 +39,16 @@ if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
         # Clear tables instead of dropping them
         async with test_engine.begin() as conn:
             for table in reversed(Base.metadata.sorted_tables):
-                await conn.execute(text('TRUNCATE TABLE auth.users CASCADE'))
+                await conn.execute(text("TRUNCATE TABLE auth.users CASCADE"))
 
     @pytest.fixture
     async def db_session(setup_database):
         """Create a fresh database session for each test."""
         connection = await test_engine.connect()
         transaction = await connection.begin()
-        
+
         session = AsyncSession(bind=connection, expire_on_commit=False)
-        
+
         try:
             yield session
         finally:
@@ -59,7 +60,7 @@ if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
     async def postgresql_context():
         async with TestAsyncSessionLocal() as session:
             yield session
-    
+
     # Set the module-level function
     override_db_context = postgresql_context
 
@@ -68,11 +69,11 @@ elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
     @pytest.fixture(scope="session")
     def dynamodb_client():
         client = boto3.client(
-            'dynamodb',
+            "dynamodb",
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID_FOR_TESTING,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY_FOR_TESTING,
             region_name=settings.AWS_REGION_FOR_TESTING,
-            endpoint_url=settings.AWS_ENDPOINT_FOR_TESTING
+            endpoint_url=settings.AWS_ENDPOINT_FOR_TESTING,
         )
         return client
 
@@ -81,17 +82,14 @@ elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
         try:
             # Scan to get all items
             response = client.scan(TableName=table_name)
-            items = response.get('Items', [])
-            
+            items = response.get("Items", [])
+
             if not items:
                 return
-            
+
             # Delete each item individually
             for item in items:
-                client.delete_item(
-                    TableName=table_name,
-                    Key={'email': item['email']}
-                )
+                client.delete_item(TableName=table_name, Key={"email": item["email"]})
         except Exception as e:
             print(f"Error during cleanup: {str(e)}")
 
@@ -114,24 +112,26 @@ elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:
         # Create a session specifically for testing
         test_session = aioboto3.Session(
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID_FOR_TESTING,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY_FOR_TESTING, 
-            region_name=settings.AWS_REGION_FOR_TESTING
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY_FOR_TESTING,
+            region_name=settings.AWS_REGION_FOR_TESTING,
         )
 
         # Create a client using context manager
         async with test_session.client(
-            'dynamodb',
-            endpoint_url=settings.AWS_ENDPOINT_FOR_TESTING
+            "dynamodb", endpoint_url=settings.AWS_ENDPOINT_FOR_TESTING
         ) as client:
             # This client will be injected into your routes
             client: DynamoDBClient
             yield client
-    
+
     # Set the module-level function
     override_db_context = dynamodb_context
 
 else:
-    raise ValueError(f"Invalid DATABASE_TYPE: {settings.DATABASE_TYPE}. Must be one of {[e.value for e in DatabaseType]}")
+    raise ValueError(
+        f"Invalid DATABASE_TYPE: {settings.DATABASE_TYPE}. Must be one of {[e.value for e in DatabaseType]}"
+    )
+
 
 # Async client fixture
 @pytest.fixture
@@ -140,11 +140,12 @@ async def async_client(setup_database):
 
     # Override the db_context dependency
     app.dependency_overrides[db_context] = override_db_context
-    
+
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as client:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", follow_redirects=True
+    ) as client:
         yield client
 
     # Clear all overrides
     app.dependency_overrides.clear()
-

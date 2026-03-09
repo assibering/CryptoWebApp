@@ -17,23 +17,21 @@ async def generate_config_dict(settings):
             "tombstones.on.delete": "false",
             "topic.prefix": "userservice",
             "slot.name": "debezium_user",
-
             "transforms": "outbox",
             "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
             "transforms.outbox.route.by.field": "aggregatetype",
             "transforms.outbox.route.topic.replacement": "userservice.${routedByValue}",
-
             "transforms.outbox.field.event.id": "id",
             "transforms.outbox.field.event.key": "aggregateid",
             "transforms.outbox.field.event.type": "eventtype",
             "transforms.outbox.field.event.payload": "payload",
             "transforms.outbox.field.event.timestamp": "created_at",
             "transforms.outbox.field.event.timestamp.type": "io.debezium.time.Timestamp",
-
             "transforms.outbox.expand.json.payload": "true",
-            "transforms.outbox.table.fields.additional.placement": "eventtype:envelope:type"
-        }
+            "transforms.outbox.table.fields.additional.placement": "eventtype:envelope:type",
+        },
     }
+
 
 # CONSUMER CONSUMES:
 # ConsumerRecord(

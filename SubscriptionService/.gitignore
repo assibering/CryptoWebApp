@@ -3,3 +3,4 @@
 **/volume
 **/.venv**
 **/uv.lock
+**/.ruff_cache

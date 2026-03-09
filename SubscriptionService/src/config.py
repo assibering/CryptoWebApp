@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Debezium settings (only related to postgres)
     DB_HOST: str = "postgresql"
     DB_PORT: str = "5432"
-    DB_USER: str = "user_service_user"
+    DB_USER: str = "subscription_service_user"
     DB_PASSWORD: str = "super_secure_password"
     DB_NAME: str = "crypto_db"
     DEBEZIUM_URL: str = "http://debezium:8083/connectors"
@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY_FOR_TESTING: str = "default_secret"
     AWS_REGION_FOR_TESTING: str = "us-east-1"
     AWS_ENDPOINT_FOR_TESTING: str = "http://localstack:4566"
+    # --------------------------------------------------------------------
+
+    # --------------------------------------------------------------------
+    # Stripe settings
+    STRIPE_SECRET_KEY: str = "super_secret_stripe_key"
+    STRIPE_WEBHOOK_SECRET: str = "super_secret_stripe_webhook_key"
+    STRIPE_SUCCESS_URL: str = "http://localhost:3000/success"
+    STRIPE_CANCEL_URL: str = "http://localhost:3000/cancel"
     # --------------------------------------------------------------------
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
