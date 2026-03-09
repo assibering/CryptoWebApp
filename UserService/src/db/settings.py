@@ -2,18 +2,24 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from enum import Enum
 
+
 class DatabaseType(str, Enum):
     POSTGRES = "postgres"
     DYNAMODB = "dynamodb"
 
+
 class Settings(BaseSettings):
-    DATABASE_TYPE: DatabaseType = DatabaseType.POSTGRES # Default to postgres
+    DATABASE_TYPE: DatabaseType = DatabaseType.POSTGRES  # Default to postgres
 
     # --------------------------------------------------------------------
     # Postgres settings
-    POSTGRES_DATABASE_URL: str = "postgresql+asyncpg://user:password@postgresql:5432/crypto_db"
-    POSTGRES_DATABASE_URL_FOR_TESTING: str = "postgresql+asyncpg://postgres:password@postgresql:5432/crypto_db"
-    
+    POSTGRES_DATABASE_URL: str = (
+        "postgresql+asyncpg://user:password@postgresql:5432/crypto_db"
+    )
+    POSTGRES_DATABASE_URL_FOR_TESTING: str = (
+        "postgresql+asyncpg://postgres:password@postgresql:5432/crypto_db"
+    )
+
     # Debezium settings (only related to postgres)
     DB_HOST: str = "postgresql"
     DB_PORT: str = "5432"
@@ -35,12 +41,8 @@ class Settings(BaseSettings):
     AWS_REGION_FOR_TESTING: str = "us-east-1"
     AWS_ENDPOINT_FOR_TESTING: str = "http://localstack:4566"
     # --------------------------------------------------------------------
-    
-    model_config = SettingsConfigDict(
-        env_file = ".env",
-        case_sensitive = True
-    )
-    
+
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 @lru_cache()

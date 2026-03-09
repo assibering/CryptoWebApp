@@ -1,20 +1,29 @@
 # src/db/factory.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from types_aiobotocore_dynamodb import DynamoDBClient
-from src.repository.interfaces.interface_SubscriptionRepository import SubscriptionRepository as SubscriptionRepositoryInterface
-from src.repository.implementations.PostgreSQL.postgres_SubscriptionRepository import SubscriptionRepository as PostgresSubscriptionRepository
-from src.repository.implementations.AWS_DynamoDB.awsdynamodb_SubscriptionRepository import SubscriptionRepository as DynamoSubscriptionRepository
+from src.repository.interfaces.interface_SubscriptionRepository import (
+    SubscriptionRepository as SubscriptionRepositoryInterface,
+)
+from src.repository.implementations.PostgreSQL.postgres_SubscriptionRepository import (
+    SubscriptionRepository as PostgresSubscriptionRepository,
+)
+from src.repository.implementations.AWS_DynamoDB.awsdynamodb_SubscriptionRepository import (
+    SubscriptionRepository as DynamoSubscriptionRepository,
+)
 from src.config import get_settings, DatabaseType
 from typing import Union
 
-def create_subscription_repository(db_context: Union[AsyncSession, DynamoDBClient]) -> SubscriptionRepositoryInterface:
+
+def create_subscription_repository(
+    db_context: Union[AsyncSession, DynamoDBClient],
+) -> SubscriptionRepositoryInterface:
     """
     Creates the appropriate repository based on configuration.
     For PostgreSQL: Uses the provided database session
     For DynamoDB: Uses the provided database client
     """
     settings = get_settings()
-    
+
     if settings.DATABASE_TYPE == DatabaseType.POSTGRES:
         return PostgresSubscriptionRepository(db_context)
     elif settings.DATABASE_TYPE == DatabaseType.DYNAMODB:

@@ -16,7 +16,7 @@ from httpx import AsyncClient
 #         "/subscriptions/create-subscription",
 #         json=test_create_data
 #     )
-    
+
 #     response_create_data = response_create.json()
 
 #     # Then retrieve the subscription
@@ -25,12 +25,13 @@ from httpx import AsyncClient
 #         "/subscriptions",
 #         params={"subscription_id": response_create_data["subscription_id"]}
 #     )
-    
+
 #     assert response_get.status_code == 200
 #     data = response_get.json()
 #     assert data["subscription_type"] == test_create_data["subscription_type"]
 #     assert data["email"] == test_create_data["email"]
 #     assert data["is_active"] == True
+
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_nonexistent_subscription(async_client: AsyncClient):
@@ -38,29 +39,31 @@ async def test_get_nonexistent_subscription(async_client: AsyncClient):
 
     response = await async_client.get(
         "/subscriptions",
-        params={"subscription_id": "a3301a70-6d24-467e-a6f8-a4d074d0bda7"}
+        params={"subscription_id": "a3301a70-6d24-467e-a6f8-a4d074d0bda7"},
     )
-    
+
     assert response.status_code == 404
     data = response.json()
-    assert 'error' in data
-    assert data["error"] == f"Subscription with subscription_id a3301a70-6d24-467e-a6f8-a4d074d0bda7 not found"
+    assert "error" in data
+    assert (
+        data["error"]
+        == "Subscription with subscription_id a3301a70-6d24-467e-a6f8-a4d074d0bda7 not found"
+    )
 
 
-#CREATE SUBSCRIPTION TESTS
+# CREATE SUBSCRIPTION TESTS
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_subscription_success(async_client: AsyncClient):
     """Test creating a new subscription"""
 
     test_create_data = {
         "subscription_type": "premium_tier",
-        "email": "1_test@example.com"
+        "email": "1_test@example.com",
     }
 
     # First create a subscription
     response = await async_client.post(
-        "/subscriptions/create-subscription",
-        json=test_create_data
+        "/subscriptions/create-subscription", json=test_create_data
     )
-    
+
     assert response.status_code == 201
