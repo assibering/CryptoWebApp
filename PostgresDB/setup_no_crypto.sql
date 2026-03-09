@@ -2,8 +2,11 @@
 
 \connect crypto_db;
 
--- 1. Setup schemas, tables
+-- 1. Setup roles, tables
+\i /opt/sql/init_roles.sql
+
+-- 2. Setup schemas, tables
 \i /opt/sql/init_tables_auth.sql
 
--- 2. Setup permissions
+-- 3. Setup permissions
 \i /opt/sql/authorised_services.sql
